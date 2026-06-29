@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GERANT
+  MONITEUR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PermitType {
+  A   // Moto
+  B   // Voiture
+  C   // Poids lourd
+  D   // Transport en commun
+  EC  // Remorque
+}
+
+enum CandidateStatus {
+  CODE_EN_COURS
+  CODE_REUSSI
+  CONDUITE_EN_COURS
+  EXAMEN_PLANIFIE
+  PERMIS_OBTENU
+  ABANDONNE
+}
+
+enum PaymentMethod {
+  CASH
+  VIREMENT
+  CHEQUE
+}
+
+enum SessionType {
+  CODE
+  CONDUITE
+}
+
+// === AUTO-ÉCOLE ===
+
+model AutoEcole {
+  id        String   @id @default(cuid())
+  name      String
+  city      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+
+  users      User[]
+  candidates Candidate[]
+
+  @@map("auto_ecoles")
+}
+
+// === UTILISATEURS (Gérant + Moniteur) ===
+
+model User {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  hashedPassword String
+  fullName       String
+  role           Role
+  phone          String?
+  isActive       Boolean  @default(true)
+  autoEcoleId    String
+  autoEcole      AutoEcole @relation(fields: [autoEcoleId], references: [id])
+  createdAt      DateTime @default(now())
+
+  sessions     Session[]
+  drivingHours DrivingHour[]
+
+  @@map("users")
+}
+
+// === CANDIDATS ===
+
+model Candidate {
+  id            String          @id @default(cuid())
+  firstName     String
+  lastName      String
+  phone         String
+  cin           String?
+  gender        Gender          @default(MALE)
+  birthDate     DateTime?
+  permitType    PermitType      @default(B)
+  status        CandidateStatus @default(CODE_EN_COURS)
+  totalFee      Float           @default(0)
+  publicToken   String          @unique @default(cuid())
+  autoEcoleId   String
+  autoEcole     AutoEcole       @relation(fields: [autoEcoleId], references: [id])
+  createdAt     DateTime        @default(now())
+
+  payments     Payment[]
+  sessions     Session[]
+  drivingHours DrivingHour[]
+
+  @@map("candidates")
+}
+
+// === PAIEMENTS ===
+
+model Payment {
+  id          String        @id @default(cuid())
+  amount      Float
+  method      PaymentMethod @default(CASH)
+  note        String?
+  candidateId String
+  candidate   Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  paidAt      DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  @@map("payments")
+}
+
+// === SÉANCES (Planning) ===
+
+model Session {
+  id          String      @id @default(cuid())
+  type        SessionType
+  date        DateTime
+  startTime   String      // "08:00"
+  endTime     String      // "09:00"
+  candidateId String
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  moniteurId  String?
+  moniteur    User?       @relation(fields: [moniteurId], references: [id])
+  completed   Boolean     @default(false)
+  note        String?
+  createdAt   DateTime    @default(now())
+
+  @@map("sessions")
+}
+
+// === HEURES DE CONDUITE ===
+
+model DrivingHour {
+  id          String    @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  moniteurId  String
+  moniteur    User      @relation(fields: [moniteurId], references: [id])
+  date        DateTime
+  duration    Int       @default(60) // minutes
+  note        String?
+  createdAt   DateTime  @default(now())
+
+  @@map("driving_hours")
+}
