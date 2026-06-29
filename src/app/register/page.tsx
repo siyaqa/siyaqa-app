@@ -53,7 +53,7 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch {
       setError("Une erreur est survenue.");

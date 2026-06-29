@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   {
     label: "Tableau de bord",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["GERANT", "MONITEUR"],
   },
@@ -65,9 +65,7 @@ export function Sidebar({ role }: { role: string }) {
         {navItems
           .filter((item) => item.roles.includes(role))
           .map((item) => {
-            const isActive = item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}

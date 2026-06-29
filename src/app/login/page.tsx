@@ -28,7 +28,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Nom d'utilisateur ou mot de passe incorrect.");
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch {
       setError("Une erreur est survenue.");

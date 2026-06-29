@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const mobileItems = [
   {
     label: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["GERANT", "MONITEUR"],
   },
@@ -53,9 +53,7 @@ export function MobileNav({ role }: { role: string }) {
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e2e8f0] bg-white md:hidden">
       <div className="flex items-center justify-around py-2">
         {visibleItems.map((item) => {
-          const isActive = item.href === "/"
-            ? pathname === "/"
-            : pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
