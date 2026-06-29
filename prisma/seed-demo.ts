@@ -20,6 +20,7 @@ async function main() {
       city: "Casablanca",
       address: "45, Bd Mohammed V, Maarif",
       phone: "0522-234567",
+      trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
     },
   });
 

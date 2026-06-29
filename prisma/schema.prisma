@@ -48,12 +48,14 @@ enum SessionType {
 // === AUTO-ÉCOLE ===
 
 model AutoEcole {
-  id        String   @id @default(cuid())
-  name      String
-  city      String
-  address   String?
-  phone     String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String
+  city         String
+  address      String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  trialEndsAt  DateTime
+  createdAt    DateTime @default(now())
 
   users      User[]
   candidates Candidate[]

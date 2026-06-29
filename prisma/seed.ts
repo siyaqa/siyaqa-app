@@ -17,6 +17,7 @@ async function main() {
       name: "أوطو إيكول النجاح",
       city: "الدار البيضاء",
       phone: "0661234567",
+      trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year for demo
     },
   });
 

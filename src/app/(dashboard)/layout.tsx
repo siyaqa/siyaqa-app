@@ -20,6 +20,13 @@ export default async function DashboardLayout({
   const role = (user.role as string) ?? "MONITEUR";
   const userName = (session.user?.name as string) ?? "Utilisateur";
   const autoEcoleName = (user.autoEcoleName as string) ?? "Auto-école";
+  const isActive = user.autoEcoleIsActive as boolean;
+  const trialEndsAt = user.autoEcoleTrialEndsAt as string;
+
+  // Check if trial expired and account not manually activated
+  if (!isActive || (trialEndsAt && new Date(trialEndsAt) < new Date())) {
+    redirect("/expired");
+  }
 
   return (
     <SessionProvider session={session}>

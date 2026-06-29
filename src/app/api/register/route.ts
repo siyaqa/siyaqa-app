@@ -28,11 +28,15 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await prisma.$transaction(async (tx) => {
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
       const autoEcole = await tx.autoEcole.create({
         data: {
           name,
           city,
           phone,
+          trialEndsAt,
         },
       });
 

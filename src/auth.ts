@@ -33,6 +33,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: user.role,
           autoEcoleId: user.autoEcoleId,
           autoEcoleName: user.autoEcole.name,
+          autoEcoleIsActive: user.autoEcole.isActive,
+          autoEcoleTrialEndsAt: user.autoEcole.trialEndsAt.toISOString(),
         } as Record<string, unknown> as import("next-auth").User;
       },
     }),
@@ -44,6 +46,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as Record<string, unknown>).role;
         token.autoEcoleId = (user as Record<string, unknown>).autoEcoleId;
         token.autoEcoleName = (user as Record<string, unknown>).autoEcoleName;
+        token.autoEcoleIsActive = (user as Record<string, unknown>).autoEcoleIsActive;
+        token.autoEcoleTrialEndsAt = (user as Record<string, unknown>).autoEcoleTrialEndsAt;
         token.username = user.email;
       }
       return token;
@@ -56,6 +60,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         u.role = token.role;
         u.autoEcoleId = token.autoEcoleId;
         u.autoEcoleName = token.autoEcoleName;
+        u.autoEcoleIsActive = token.autoEcoleIsActive;
+        u.autoEcoleTrialEndsAt = token.autoEcoleTrialEndsAt;
         u.username = token.username;
       }
       return session;
