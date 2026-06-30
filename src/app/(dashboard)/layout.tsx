@@ -30,6 +30,10 @@ export default async function DashboardLayout({
     select: { isActive: true, trialEndsAt: true, name: true, city: true },
   });
 
+  if (!autoEcole) {
+    redirect("/expired");
+  }
+
   const GRACE_PERIOD_DAYS = 7;
   const now = new Date();
   const expiresAt = new Date(autoEcole.trialEndsAt);

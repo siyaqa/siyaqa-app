@@ -17,6 +17,10 @@ export async function checkSubscription() {
     select: { isActive: true, trialEndsAt: true },
   });
 
+  if (!autoEcole) {
+    return { error: NextResponse.json({ error: "Compte introuvable" }, { status: 403 }) };
+  }
+
   const GRACE_PERIOD_DAYS = 7;
   const now = new Date();
   const expiresAt = new Date(autoEcole.trialEndsAt);

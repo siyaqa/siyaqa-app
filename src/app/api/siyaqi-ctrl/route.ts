@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET || "siyaqi-admin-2026";
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+if (!ADMIN_SECRET) {
+  throw new Error("ADMIN_SECRET environment variable is required");
+}
 
 function checkAuth(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -37,7 +40,13 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+  }
+
   const { id, days, expiresAt, isActive } = body;
 
   if (!id) {
@@ -51,9 +60,12 @@ export async function PATCH(request: Request) {
   }
 
   if (expiresAt) {
-    // Set exact expiration date
-    data.trialEndsAt = new Date(expiresAt + "T23:59:59");
-  } else if (days && typeof days === "number") {
+    const date = new Date(expiresAt + "T23:59:59");
+    if (isNaN(date.getTime())) {
+      return NextResponse.json({ error: "Date invalide" }, { status: 400 });
+    }
+    data.trialEndsAt = date;
+  } else if (typeof days === "number" && Number.isFinite(days) && days > 0 && days <= 365) {
     const newDate = new Date();
     newDate.setDate(newDate.getDate() + days);
     data.trialEndsAt = newDate;
