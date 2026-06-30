@@ -26,7 +26,7 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/siyaqi-ctrl", {
         headers: { Authorization: `Bearer ${secret}` },
       });
       if (!res.ok) {
@@ -53,7 +53,7 @@ export default function AdminPage() {
   };
 
   const handleExtend = async (id: string, days: number) => {
-    await fetch("/api/admin", {
+    await fetch("/api/siyaqi-ctrl", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +65,7 @@ export default function AdminPage() {
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
-    await fetch("/api/admin", {
+    await fetch("/api/siyaqi-ctrl", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
