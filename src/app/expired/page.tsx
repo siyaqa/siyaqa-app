@@ -16,7 +16,7 @@ export default function ExpiredPage() {
           Votre essai gratuit est terminé
         </h1>
         <p className="text-gray-500 mb-8">
-          Votre période d&apos;essai de 14 jours est arrivée à son terme.
+          Votre période d&apos;essai de 30 jours est arrivée à son terme.
           Pour continuer à utiliser Siyaqi, activez votre abonnement.
         </p>
 

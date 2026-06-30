@@ -67,7 +67,7 @@ export default function LandingPage() {
                 href="/register"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-primary hover:bg-primary-hover rounded-xl transition-colors shadow-lg shadow-primary/25"
               >
-                Essai gratuit 14 jours
+                Essai gratuit 30 jours
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="text-sm text-gray-400">Sans carte bancaire. Sans engagement.</p>
@@ -247,7 +247,7 @@ export default function LandingPage() {
               href="/register"
               className="mt-8 w-full inline-flex items-center justify-center gap-2 px-6 py-4 text-lg font-semibold text-white bg-primary hover:bg-primary-hover rounded-xl transition-colors"
             >
-              Essai gratuit 14 jours
+              Essai gratuit 30 jours
               <ArrowRight className="w-5 h-5" />
             </Link>
             <p className="text-center text-xs text-gray-400 mt-3">
