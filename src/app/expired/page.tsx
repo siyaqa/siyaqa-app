@@ -33,7 +33,7 @@ export default function ExpiredPage() {
           </div>
 
           <a
-            href="https://wa.me/212620513156?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20Siyaqi."
+            href="https://wa.me/212681177394?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20Siyaqi."
             target="_blank"
             rel="noopener noreferrer"
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"

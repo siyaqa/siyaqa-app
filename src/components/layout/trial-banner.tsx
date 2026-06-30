@@ -46,7 +46,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
       <div className="flex items-center gap-2">
         {showActivate && (
           <a
-            href="https://wa.me/212620513156?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20Siyaqi."
+            href="https://wa.me/212681177394?text=Bonjour%2C%20je%20souhaite%20activer%20mon%20abonnement%20Siyaqi."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
