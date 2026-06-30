@@ -252,6 +252,20 @@ export default function AdminPage() {
 
               <div className="flex flex-wrap gap-2 mb-1">
                 <button
+                  onClick={async () => {
+                    await fetch("/api/siyaqi-ctrl", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+                      body: JSON.stringify({ id: ecole.id, days: 30 }),
+                    });
+                    fetchEcoles();
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Activer 1 mois
+                </button>
+                <button
                   onClick={() => handleToggleActive(ecole.id, ecole.isActive)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                     ecole.isActive
