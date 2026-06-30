@@ -56,6 +56,13 @@ export async function POST(request: Request) {
 
     const { hashedPassword: _, ...userWithoutPassword } = result;
 
+    // Notify admin of new registration (fire and forget)
+    fetch("https://ntfy.sh/siyaqi-notifications", {
+      method: "POST",
+      headers: { "Title": "Nouvelle inscription Siyaqi", "Priority": "high", "Tags": "tada" },
+      body: `${name} — ${city}\nGérant: ${fullName}\nTél: ${phone || "non renseigné"}`,
+    }).catch(() => {});
+
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
