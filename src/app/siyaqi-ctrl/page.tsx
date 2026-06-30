@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Car, CheckCircle, XCircle, RefreshCw, LogIn, Users } from "lucide-react";
+import { Car, CheckCircle, XCircle, RefreshCw, LogIn, Users, CalendarClock } from "lucide-react";
 
 interface AutoEcole {
   id: string;
@@ -13,6 +13,77 @@ interface AutoEcole {
   createdAt: string;
   users: { fullName: string; username: string; phone: string | null }[];
   _count: { candidates: number };
+}
+
+function ExtendPanel({ ecoleId, secret, onDone }: { ecoleId: string; secret: string; onDone: () => void }) {
+  const [days, setDays] = useState("");
+  const [date, setDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleExtendDays = async () => {
+    if (!days || Number(days) <= 0) return;
+    setSaving(true);
+    await fetch("/api/siyaqi-ctrl", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+      body: JSON.stringify({ id: ecoleId, days: Number(days) }),
+    });
+    setSaving(false);
+    setDays("");
+    onDone();
+  };
+
+  const handleSetDate = async () => {
+    if (!date) return;
+    setSaving(true);
+    await fetch("/api/siyaqi-ctrl", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+      body: JSON.stringify({ id: ecoleId, expiresAt: date }),
+    });
+    setSaving(false);
+    setDate("");
+    onDone();
+  };
+
+  return (
+    <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-gray-100">
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={days}
+          onChange={(e) => setDays(e.target.value)}
+          placeholder="Nb jours"
+          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+        />
+        <button
+          onClick={handleExtendDays}
+          disabled={!days || saving}
+          className="px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
+        >
+          + Ajouter
+        </button>
+      </div>
+      <div className="text-xs text-gray-300">ou</div>
+      <div className="flex items-center gap-2">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+        />
+        <button
+          onClick={handleSetDate}
+          disabled={!date || saving}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+        >
+          <CalendarClock className="w-3.5 h-3.5" />
+          Définir
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -49,18 +120,6 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchEcoles();
-  };
-
-  const handleExtend = async (id: string, days: number) => {
-    await fetch("/api/siyaqi-ctrl", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
-      body: JSON.stringify({ id, days }),
-    });
     fetchEcoles();
   };
 
@@ -191,26 +250,7 @@ export default function AdminPage() {
                 Expire le: {new Date(ecole.trialEndsAt).toLocaleDateString("fr-FR")} à {new Date(ecole.trialEndsAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => handleExtend(ecole.id, 30)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  +30 jours
-                </button>
-                <button
-                  onClick={() => handleExtend(ecole.id, 90)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  +90 jours
-                </button>
-                <button
-                  onClick={() => handleExtend(ecole.id, 365)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  +1 an
-                </button>
+              <div className="flex flex-wrap gap-2 mb-1">
                 <button
                   onClick={() => handleToggleActive(ecole.id, ecole.isActive)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
@@ -232,6 +272,8 @@ export default function AdminPage() {
                   )}
                 </button>
               </div>
+
+              <ExtendPanel ecoleId={ecole.id} secret={secret} onDone={fetchEcoles} />
             </div>
           );
         })}

@@ -38,7 +38,7 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { id, days, isActive } = body;
+  const { id, days, expiresAt, isActive } = body;
 
   if (!id) {
     return NextResponse.json({ error: "ID requis" }, { status: 400 });
@@ -50,7 +50,10 @@ export async function PATCH(request: Request) {
     data.isActive = isActive;
   }
 
-  if (days && typeof days === "number") {
+  if (expiresAt) {
+    // Set exact expiration date
+    data.trialEndsAt = new Date(expiresAt + "T23:59:59");
+  } else if (days && typeof days === "number") {
     const newDate = new Date();
     newDate.setDate(newDate.getDate() + days);
     data.trialEndsAt = newDate;
