@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Siyaqi — إدارة أوطو إيكول",
   description: "المنصة الذكية لإدارة مدرسة تعليم السياقة",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
