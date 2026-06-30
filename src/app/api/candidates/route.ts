@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { checkSubscription } from "@/lib/check-subscription";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
-  const autoEcoleId = (session.user as Record<string, unknown>).autoEcoleId as string;
+  const check = await checkSubscription();
+  if (check.error) return check.error;
+  const { session, autoEcoleId } = check;
 
   const candidates = await prisma.candidate.findMany({
     where: { autoEcoleId },
@@ -31,17 +28,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Non authentifié" }, { status: 401 });
-  }
+  const check = await checkSubscription();
+  if (check.error) return check.error;
+  const { session, autoEcoleId } = check;
 
   const role = (session.user as Record<string, unknown>).role as string;
   if (role !== "GERANT") {
     return Response.json({ error: "Accès refusé" }, { status: 403 });
   }
-
-  const autoEcoleId = (session.user as Record<string, unknown>).autoEcoleId as string;
   const body = await request.json();
   const { firstName, lastName, phone, cin, gender, permitType, totalFee } = body;
 

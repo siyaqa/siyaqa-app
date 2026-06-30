@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -21,16 +22,20 @@ export default async function DashboardLayout({
   const role = (user.role as string) ?? "MONITEUR";
   const userName = (session.user?.name as string) ?? "Utilisateur";
   const autoEcoleName = (user.autoEcoleName as string) ?? "Auto-école";
-  const isActive = user.autoEcoleIsActive as boolean;
-  const trialEndsAt = user.autoEcoleTrialEndsAt as string;
+  const autoEcoleId = user.autoEcoleId as string;
 
-  // Check if trial expired and account not manually activated
-  if (!isActive || (trialEndsAt && new Date(trialEndsAt) < new Date())) {
+  // Check subscription status from DB (not JWT) so admin changes take effect immediately
+  const autoEcole = await prisma.autoEcole.findUnique({
+    where: { id: autoEcoleId },
+    select: { isActive: true, trialEndsAt: true },
+  });
+
+  if (!autoEcole || !autoEcole.isActive || new Date(autoEcole.trialEndsAt) < new Date()) {
     redirect("/expired");
   }
 
   const daysLeft = Math.ceil(
-    (new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    (new Date(autoEcole.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
   );
 
   return (
