@@ -27,11 +27,9 @@ function getStatusInfo(ecole: AutoEcole) {
   const trial = new Date(ecole.trialEndsAt);
   if (trial < now) return { key: "expired" as const, label: "Expiré", color: "text-orange-600 bg-orange-50", barColor: "bg-orange-400", percent: 0 };
   const daysLeft = Math.ceil((trial.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  const created = new Date(ecole.createdAt);
-  const totalDays = Math.max(Math.ceil((trial.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)), 1);
-  const percent = Math.min(Math.round((daysLeft / totalDays) * 100), 100);
-  if (daysLeft <= 7) return { key: "expiring" as const, label: `${daysLeft}j restant`, color: "text-yellow-600 bg-yellow-50", barColor: "bg-yellow-400", percent };
-  return { key: "active" as const, label: `${daysLeft}j restant`, color: "text-green-600 bg-green-50", barColor: "bg-green-500", percent };
+  const percent = Math.min(Math.round((daysLeft / 30) * 100), 100);
+  if (daysLeft <= 7) return { key: "expiring" as const, label: `${daysLeft}j / 30j`, color: "text-yellow-600 bg-yellow-50", barColor: "bg-yellow-400", percent };
+  return { key: "active" as const, label: `${daysLeft}j / 30j`, color: "text-green-600 bg-green-50", barColor: "bg-green-500", percent };
 }
 
 function ExtendPanel({ ecoleId, secret, onDone }: { ecoleId: string; secret: string; onDone: () => void }) {

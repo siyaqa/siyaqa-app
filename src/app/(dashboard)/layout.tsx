@@ -27,10 +27,22 @@ export default async function DashboardLayout({
   // Check subscription status from DB (not JWT) so admin changes take effect immediately
   const autoEcole = await prisma.autoEcole.findUnique({
     where: { id: autoEcoleId },
-    select: { isActive: true, trialEndsAt: true },
+    select: { isActive: true, trialEndsAt: true, name: true, city: true },
   });
 
   if (!autoEcole || !autoEcole.isActive || new Date(autoEcole.trialEndsAt) < new Date()) {
+    // Notify admin that a client just hit the expired page
+    if (autoEcole) {
+      try {
+        await fetch("https://ntfy.sh/siyaqi-notifications", {
+          method: "POST",
+          headers: { "Title": "Abonnement expiré", "Priority": "high", "Tags": "warning" },
+          body: `${autoEcole.name} — ${autoEcole.city}\nLe client vient d'essayer de se connecter mais son abonnement est expiré.\nContactez-le pour le renouvellement.`,
+        });
+      } catch {
+        // Don't block redirect if notification fails
+      }
+    }
     redirect("/expired");
   }
 
