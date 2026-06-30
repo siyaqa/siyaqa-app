@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Car, CheckCircle, XCircle, RefreshCw, LogIn, Users, CalendarClock } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Car, CheckCircle, XCircle, RefreshCw, LogIn, Users,
+  CalendarClock, Search, Filter, TrendingUp, Clock, AlertTriangle, Ban,
+  Phone,
+} from "lucide-react";
 
 interface AutoEcole {
   id: string;
@@ -15,10 +19,26 @@ interface AutoEcole {
   _count: { candidates: number };
 }
 
+type StatusType = "all" | "active" | "expiring" | "expired" | "disabled";
+
+function getStatusInfo(ecole: AutoEcole) {
+  if (!ecole.isActive) return { key: "disabled" as const, label: "Désactivé", color: "text-red-600 bg-red-50", barColor: "bg-red-400", percent: 0 };
+  const now = new Date();
+  const trial = new Date(ecole.trialEndsAt);
+  if (trial < now) return { key: "expired" as const, label: "Expiré", color: "text-orange-600 bg-orange-50", barColor: "bg-orange-400", percent: 0 };
+  const daysLeft = Math.ceil((trial.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const created = new Date(ecole.createdAt);
+  const totalDays = Math.max(Math.ceil((trial.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)), 1);
+  const percent = Math.min(Math.round((daysLeft / totalDays) * 100), 100);
+  if (daysLeft <= 7) return { key: "expiring" as const, label: `${daysLeft}j restant`, color: "text-yellow-600 bg-yellow-50", barColor: "bg-yellow-400", percent };
+  return { key: "active" as const, label: `${daysLeft}j restant`, color: "text-green-600 bg-green-50", barColor: "bg-green-500", percent };
+}
+
 function ExtendPanel({ ecoleId, secret, onDone }: { ecoleId: string; secret: string; onDone: () => void }) {
   const [days, setDays] = useState("");
   const [date, setDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleExtendDays = async () => {
     if (!days || Number(days) <= 0) return;
@@ -46,38 +66,30 @@ function ExtendPanel({ ecoleId, secret, onDone }: { ecoleId: string; secret: str
     onDone();
   };
 
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="text-xs text-gray-400 hover:text-gray-600 mt-2">
+        Personnaliser la durée...
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-gray-100">
       <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="1"
-          value={days}
-          onChange={(e) => setDays(e.target.value)}
-          placeholder="Nb jours"
-          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
-        />
-        <button
-          onClick={handleExtendDays}
-          disabled={!days || saving}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
-        >
+        <input type="number" min="1" value={days} onChange={(e) => setDays(e.target.value)} placeholder="Nb jours"
+          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]" />
+        <button onClick={handleExtendDays} disabled={!days || saving}
+          className="px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
           + Ajouter
         </button>
       </div>
       <div className="text-xs text-gray-300">ou</div>
       <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
-        />
-        <button
-          onClick={handleSetDate}
-          disabled={!date || saving}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
-        >
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+          className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#2563eb]" />
+        <button onClick={handleSetDate} disabled={!date || saving}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50">
           <CalendarClock className="w-3.5 h-3.5" />
           Définir
         </button>
@@ -92,6 +104,8 @@ export default function AdminPage() {
   const [ecoles, setEcoles] = useState<AutoEcole[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<StatusType>("all");
 
   const fetchEcoles = useCallback(async () => {
     setLoading(true);
@@ -111,6 +125,7 @@ export default function AdminPage() {
       const data = await res.json();
       setEcoles(data);
       setAuthenticated(true);
+      sessionStorage.setItem("admin_secret", secret);
     } catch {
       setError("Erreur de chargement.");
     } finally {
@@ -126,11 +141,17 @@ export default function AdminPage() {
   const handleToggleActive = async (id: string, isActive: boolean) => {
     await fetch("/api/siyaqi-ctrl", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
       body: JSON.stringify({ id, isActive: !isActive }),
+    });
+    fetchEcoles();
+  };
+
+  const handleActivateMonth = async (id: string) => {
+    await fetch("/api/siyaqi-ctrl", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+      body: JSON.stringify({ id, days: 30 }),
     });
     fetchEcoles();
   };
@@ -151,15 +172,45 @@ export default function AdminPage() {
     }
   }, [secret, authenticated, fetchEcoles]);
 
-  const getStatus = (ecole: AutoEcole) => {
-    if (!ecole.isActive) return { label: "Désactivé", color: "text-red-600 bg-red-50" };
-    const now = new Date();
-    const trial = new Date(ecole.trialEndsAt);
-    if (trial < now) return { label: "Expiré", color: "text-orange-600 bg-orange-50" };
-    const daysLeft = Math.ceil((trial.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysLeft <= 3) return { label: `${daysLeft}j restant`, color: "text-yellow-600 bg-yellow-50" };
-    return { label: `${daysLeft}j restant`, color: "text-green-600 bg-green-50" };
-  };
+  const stats = useMemo(() => {
+    const total = ecoles.length;
+    let active = 0, expiring = 0, expired = 0, disabled = 0, totalCandidates = 0;
+    const cities = new Set<string>();
+    const newToday = ecoles.filter(e => {
+      const created = new Date(e.createdAt);
+      const today = new Date();
+      return created.toDateString() === today.toDateString();
+    }).length;
+
+    ecoles.forEach(e => {
+      const s = getStatusInfo(e);
+      if (s.key === "active") active++;
+      else if (s.key === "expiring") expiring++;
+      else if (s.key === "expired") expired++;
+      else if (s.key === "disabled") disabled++;
+      totalCandidates += e._count.candidates;
+      cities.add(e.city);
+    });
+
+    return { total, active, expiring, expired, disabled, totalCandidates, cities: cities.size, newToday };
+  }, [ecoles]);
+
+  const filtered = useMemo(() => {
+    return ecoles.filter(e => {
+      const s = getStatusInfo(e);
+      if (filter !== "all" && s.key !== filter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const gerant = e.users[0];
+        const matchName = e.name.toLowerCase().includes(q);
+        const matchCity = e.city.toLowerCase().includes(q);
+        const matchGerant = gerant?.fullName.toLowerCase().includes(q);
+        const matchPhone = gerant?.phone?.includes(q) || e.phone?.includes(q);
+        if (!matchName && !matchCity && !matchGerant && !matchPhone) return false;
+      }
+      return true;
+    });
+  }, [ecoles, filter, search]);
 
   if (!authenticated) {
     return (
@@ -173,19 +224,11 @@ export default function AdminPage() {
           </div>
           <form onSubmit={handleLogin} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{error}</div>}
-            <input
-              type="password"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder="Mot de passe admin"
-              required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#2563eb] text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
+            <input type="password" value={secret} onChange={(e) => setSecret(e.target.value)}
+              placeholder="Mot de passe admin" required
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]" />
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#2563eb] text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
               <LogIn className="w-4 h-4 inline mr-2" />
               {loading ? "Chargement..." : "Accéder"}
             </button>
@@ -197,106 +240,184 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Car className="w-6 h-6 text-[#2563eb]" />
             <h1 className="text-lg font-bold">Siyaqi Admin</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{ecoles.length} auto-école(s)</span>
-            <button
-              onClick={fetchEcoles}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+          <button onClick={fetchEcoles} disabled={loading}
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-4">
-        {ecoles.map((ecole) => {
-          const status = getStatus(ecole);
-          const gerant = ecole.users[0];
-          return (
-            <div key={ecole.id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-semibold text-gray-900">{ecole.name}</h2>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.color}`}>
-                      {status.label}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-gray-500 mb-1">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-xs font-medium">Total</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-xs text-gray-400">{stats.newToday > 0 ? `+${stats.newToday} aujourd'hui` : `${stats.cities} ville(s)`}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-green-600 mb-1">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-xs font-medium">Actifs</span>
+            </div>
+            <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+            <p className="text-xs text-gray-400">{stats.totalCandidates} candidat(s) total</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-yellow-600 mb-1">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-xs font-medium">Expirent bientôt</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600">{stats.expiring}</p>
+            <p className="text-xs text-gray-400">{"< 7 jours"}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-red-600 mb-1">
+              <Ban className="w-4 h-4" />
+              <span className="text-xs font-medium">Expirés / Off</span>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{stats.expired + stats.disabled}</p>
+            <p className="text-xs text-gray-400">À relancer</p>
+          </div>
+        </div>
+
+        {/* Search + Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par nom, ville, gérant ou téléphone..."
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]" />
+          </div>
+          <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-300 p-1">
+            <Filter className="w-4 h-4 text-gray-400 ml-2" />
+            {([
+              ["all", "Tous"],
+              ["active", "Actifs"],
+              ["expiring", "Bientôt"],
+              ["expired", "Expirés"],
+              ["disabled", "Off"],
+            ] as [StatusType, string][]).map(([key, label]) => (
+              <button key={key} onClick={() => setFilter(key)}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  filter === key ? "bg-[#2563eb] text-white" : "text-gray-500 hover:bg-gray-100"
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="space-y-3">
+          {filtered.map((ecole) => {
+            const status = getStatusInfo(ecole);
+            const gerant = ecole.users[0];
+            const daysLeft = Math.max(0, Math.ceil((new Date(ecole.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+
+            return (
+              <div key={ecole.id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
+                {/* Top row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-gray-900">{ecole.name}</h2>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.color}`}>
+                        {status.label}
+                      </span>
+                      {new Date(ecole.createdAt).toDateString() === new Date().toDateString() && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full text-blue-600 bg-blue-50">Nouveau</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {ecole.city} — Inscrit le {new Date(ecole.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-4 h-4" /> {ecole._count.candidates}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    {ecole.city} • Inscrit le {new Date(ecole.createdAt).toLocaleDateString("fr-FR")}
-                  </p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Users className="w-4 h-4" />
-                  {ecole._count.candidates} candidat(s)
+
+                {/* Gérant info */}
+                {gerant && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-3 bg-gray-50 rounded-lg px-3 py-2">
+                    <span><span className="font-medium">Gérant:</span> {gerant.fullName}</span>
+                    <span className="text-gray-400">({gerant.username})</span>
+                    {(gerant.phone || ecole.phone) && (
+                      <a href={`tel:${gerant.phone || ecole.phone}`} className="inline-flex items-center gap-1 text-[#2563eb] hover:underline">
+                        <Phone className="w-3.5 h-3.5" />
+                        {gerant.phone || ecole.phone}
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Progress bar */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Expire le {new Date(ecole.trialEndsAt).toLocaleDateString("fr-FR")}
+                    </span>
+                    <span>{status.key === "expired" || status.key === "disabled" ? "0" : daysLeft}j restant</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className={`h-2 rounded-full transition-all ${status.barColor}`}
+                      style={{ width: `${status.percent}%` }} />
+                  </div>
                 </div>
-              </div>
 
-              {gerant && (
-                <div className="text-sm text-gray-600 mb-4 bg-gray-50 rounded-lg p-3">
-                  <span className="font-medium">Gérant:</span> {gerant.fullName} ({gerant.username})
-                  {gerant.phone && <span> • {gerant.phone}</span>}
-                </div>
-              )}
-
-              <div className="text-xs text-gray-400 mb-3">
-                Expire le: {new Date(ecole.trialEndsAt).toLocaleDateString("fr-FR")} à {new Date(ecole.trialEndsAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-1">
-                <button
-                  onClick={async () => {
-                    await fetch("/api/siyaqi-ctrl", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
-                      body: JSON.stringify({ id: ecole.id, days: 30 }),
-                    });
-                    fetchEcoles();
-                  }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Activer 1 mois
-                </button>
-                <button
-                  onClick={() => handleToggleActive(ecole.id, ecole.isActive)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                    ecole.isActive
-                      ? "text-red-600 bg-red-50 hover:bg-red-100"
-                      : "text-green-600 bg-green-50 hover:bg-green-100"
-                  }`}
-                >
-                  {ecole.isActive ? (
-                    <>
-                      <XCircle className="w-3.5 h-3.5" />
-                      Désactiver
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Réactiver
-                    </>
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => handleActivateMonth(ecole.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Activer 1 mois
+                  </button>
+                  <button onClick={() => handleToggleActive(ecole.id, ecole.isActive)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      ecole.isActive
+                        ? "text-red-600 bg-red-50 hover:bg-red-100"
+                        : "text-green-600 bg-green-50 hover:bg-green-100"
+                    }`}>
+                    {ecole.isActive ? (
+                      <><XCircle className="w-3.5 h-3.5" /> Désactiver</>
+                    ) : (
+                      <><CheckCircle className="w-3.5 h-3.5" /> Réactiver</>
+                    )}
+                  </button>
+                  {(gerant?.phone || ecole.phone) && (
+                    <a href={`https://wa.me/212${(gerant?.phone || ecole.phone || "").replace(/^0/, "")}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                      WhatsApp
+                    </a>
                   )}
-                </button>
+                </div>
+
+                <ExtendPanel ecoleId={ecole.id} secret={secret} onDone={fetchEcoles} />
               </div>
+            );
+          })}
 
-              <ExtendPanel ecoleId={ecole.id} secret={secret} onDone={fetchEcoles} />
+          {filtered.length === 0 && !loading && (
+            <div className="text-center py-12 text-gray-400">
+              {search || filter !== "all" ? "Aucun résultat." : "Aucune auto-école inscrite."}
             </div>
-          );
-        })}
-
-        {ecoles.length === 0 && !loading && (
-          <div className="text-center py-12 text-gray-400">
-            Aucune auto-école inscrite.
-          </div>
-        )}
+          )}
+        </div>
       </main>
     </div>
   );
