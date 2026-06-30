@@ -17,7 +17,13 @@ export async function checkSubscription() {
     select: { isActive: true, trialEndsAt: true },
   });
 
-  if (!autoEcole || !autoEcole.isActive || new Date(autoEcole.trialEndsAt) < new Date()) {
+  const GRACE_PERIOD_DAYS = 7;
+  const now = new Date();
+  const expiresAt = new Date(autoEcole.trialEndsAt);
+  const graceLimitDate = new Date(expiresAt);
+  graceLimitDate.setDate(graceLimitDate.getDate() + GRACE_PERIOD_DAYS);
+
+  if (!autoEcole.isActive || now > graceLimitDate) {
     return { error: NextResponse.json({ error: "Abonnement expiré" }, { status: 403 }) };
   }
 

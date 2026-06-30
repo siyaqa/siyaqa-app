@@ -7,14 +7,30 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
   const [dismissed, setDismissed] = useState(false);
 
   // Don't show if more than 30 days left (paid subscriber)
-  if (daysLeft > 30 || dismissed) return null;
+  if (daysLeft > 30) return null;
+
+  // Grace period: daysLeft is negative (e.g., -3 means 3 days past expiration)
+  const isGracePeriod = daysLeft <= 0;
+  const graceDaysLeft = 7 + daysLeft; // e.g., daysLeft=-3 → 4 days left in grace
+
+  // During grace period or last 3 days: cannot dismiss
+  const canDismiss = !isGracePeriod && daysLeft > 3;
+
+  if (dismissed && canDismiss) return null;
 
   let bg: string;
   let text: string;
   let message: string;
   let showActivate = false;
 
-  if (daysLeft > 7) {
+  if (isGracePeriod) {
+    bg = "bg-red-100 border-red-300";
+    text = "text-red-800";
+    message = graceDaysLeft > 1
+      ? `Abonnement expiré — ${graceDaysLeft} jours avant suspension du compte`
+      : "Dernier jour avant suspension du compte !";
+    showActivate = true;
+  } else if (daysLeft > 7) {
     bg = "bg-blue-50 border-blue-200";
     text = "text-blue-700";
     message = `Essai gratuit : ${daysLeft} jours restants`;
@@ -23,17 +39,12 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
     text = "text-yellow-700";
     message = `Votre essai expire dans ${daysLeft} jours`;
     showActivate = true;
-  } else if (daysLeft > 0) {
+  } else {
     bg = "bg-red-50 border-red-200";
     text = "text-red-700";
     message = daysLeft === 1
       ? "Dernier jour de votre essai gratuit !"
       : `Votre essai expire dans ${daysLeft} jours !`;
-    showActivate = true;
-  } else {
-    bg = "bg-red-50 border-red-200";
-    text = "text-red-700";
-    message = "Votre essai est terminé";
     showActivate = true;
   }
 
@@ -55,7 +66,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
             Activer
           </a>
         )}
-        {daysLeft > 3 && (
+        {canDismiss && (
           <button
             onClick={() => setDismissed(true)}
             className={`p-1 rounded hover:bg-black/5 ${text}`}

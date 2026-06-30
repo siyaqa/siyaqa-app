@@ -30,24 +30,43 @@ export default async function DashboardLayout({
     select: { isActive: true, trialEndsAt: true, name: true, city: true },
   });
 
-  if (!autoEcole || !autoEcole.isActive || new Date(autoEcole.trialEndsAt) < new Date()) {
-    // Notify admin that a client just hit the expired page
-    if (autoEcole) {
-      try {
-        await fetch("https://ntfy.sh/siyaqi-notifications", {
-          method: "POST",
-          headers: { "Title": "Abonnement expiré", "Priority": "high", "Tags": "warning" },
-          body: `${autoEcole.name} — ${autoEcole.city}\nLe client vient d'essayer de se connecter mais son abonnement est expiré.\nContactez-le pour le renouvellement.`,
-        });
-      } catch {
-        // Don't block redirect if notification fails
-      }
+  const GRACE_PERIOD_DAYS = 7;
+  const now = new Date();
+  const expiresAt = new Date(autoEcole.trialEndsAt);
+  const graceLimitDate = new Date(expiresAt);
+  graceLimitDate.setDate(graceLimitDate.getDate() + GRACE_PERIOD_DAYS);
+
+  // Account manually disabled or grace period over → block
+  if (!autoEcole.isActive || now > graceLimitDate) {
+    // Notify admin that a client just got blocked
+    try {
+      await fetch("https://ntfy.sh/siyaqi-notifications", {
+        method: "POST",
+        headers: { "Title": "Compte bloqué", "Priority": "high", "Tags": "no_entry" },
+        body: `${autoEcole.name} — ${autoEcole.city}\nLe client vient d'être bloqué (fin de période de grâce).\nContactez-le pour le renouvellement.`,
+      });
+    } catch {
+      // Don't block redirect if notification fails
     }
     redirect("/expired");
   }
 
+  // Notify admin first time a client enters grace period (day 31)
+  const daysPastExpiry = Math.ceil((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60 * 24));
+  if (daysPastExpiry === 1) {
+    try {
+      await fetch("https://ntfy.sh/siyaqi-notifications", {
+        method: "POST",
+        headers: { "Title": "Abonnement expiré — période de grâce", "Priority": "high", "Tags": "warning" },
+        body: `${autoEcole.name} — ${autoEcole.city}\nL'abonnement vient d'expirer. Le client a encore ${GRACE_PERIOD_DAYS} jours de grâce.\nContactez-le pour le renouvellement.`,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   const daysLeft = Math.ceil(
-    (new Date(autoEcole.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
   );
 
   return (
