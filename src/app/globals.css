@@ -38,3 +38,19 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+select,
+label[for] {
+  cursor: pointer;
+}
+
+input:disabled,
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
