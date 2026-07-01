@@ -38,6 +38,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
+          export PATH="/usr/lib/postgresql/18/bin:$PATH"   # force pg_dump 18 (>= serveur Neon 18.4)
+          pg_dump --version
           TS=$(date -u +'%Y-%m-%dT%H-%M-%SZ')
           FILE="siyaqi-db-${TS}.dump"
           pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --file="$FILE"
