@@ -1,0 +1,56 @@
+name: Daily DB Backup to R2
+
+on:
+  schedule:
+    - cron: '17 2 * * *'      # tous les jours à 02:17 UTC (~03:17 Casablanca)
+  workflow_dispatch: {}        # permet un lancement manuel / de test
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 18 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install boto3
+        run: pip install --quiet boto3
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          TS=$(date -u +'%Y-%m-%dT%H-%M-%SZ')
+          FILE="siyaqi-db-${TS}.dump"
+          pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --file="$FILE"
+          SIZE=$(stat -c%s "$FILE")
+          echo "Dump créé: $FILE ($SIZE octets)"
+          if [ "$SIZE" -lt 1000 ]; then echo "ERREUR: dump trop petit"; exit 1; fi
+          echo "BACKUP_FILE=$FILE" >> "$GITHUB_ENV"
+
+      - name: Upload to R2 + prune old backups
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RETENTION_DAYS: '30'
+        run: python .github/scripts/r2_backup.py
