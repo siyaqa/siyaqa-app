@@ -40,6 +40,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Champs requis manquants" }, { status: 400 });
   }
 
+  if (typeof password !== "string" || password.length < 8) {
+    return Response.json(
+      { error: "Le mot de passe doit contenir au moins 8 caractères." },
+      { status: 400 }
+    );
+  }
+
   // Check if username already exists
   const existing = await prisma.user.findUnique({
     where: { username },

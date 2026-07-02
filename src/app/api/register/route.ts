@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { notifyAdmin } from "@/lib/notify";
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,13 @@ export async function POST(request: Request) {
     if (!name || !city || !fullName || !username || !password) {
       return NextResponse.json(
         { error: "Tous les champs obligatoires doivent être remplis." },
+        { status: 400 }
+      );
+    }
+
+    if (typeof password !== "string" || password.length < 8) {
+      return NextResponse.json(
+        { error: "Le mot de passe doit contenir au moins 8 caractères." },
         { status: 400 }
       );
     }
@@ -56,16 +64,13 @@ export async function POST(request: Request) {
 
     const { hashedPassword: _, ...userWithoutPassword } = result;
 
-    // Notify admin of new registration
-    try {
-      await fetch("https://ntfy.sh/siyaqi-notifications", {
-        method: "POST",
-        headers: { "Title": "Nouvelle inscription Siyaqi", "Priority": "high", "Tags": "tada" },
-        body: `${name} — ${city}\nGérant: ${fullName}\nTél: ${phone || "non renseigné"}`,
-      });
-    } catch {
-      // Don't block registration if notification fails
-    }
+    // Notify admin of new registration (topic privé via NTFY_TOPIC)
+    await notifyAdmin({
+      title: "Nouvelle inscription Siyaqi",
+      priority: "high",
+      tags: "tada",
+      body: `${name} — ${city}\nGérant: ${fullName}\nTél: ${phone || "non renseigné"}`,
+    });
 
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {

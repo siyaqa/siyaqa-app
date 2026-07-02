@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSubscription } from "@/lib/check-subscription";
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
       gender: gender || "MALE",
       permitType: permitType || "B",
       totalFee: totalFee || 0,
+      // Jeton public crypto-aléatoire (URL /c/<token>) — plus robuste que le cuid par défaut
+      publicToken: randomBytes(24).toString("base64url"),
       autoEcoleId,
     },
   });
