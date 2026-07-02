@@ -161,8 +161,8 @@ model DrivingHour {
   id          String    @id @default(cuid())
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  moniteurId  String
-  moniteur    User      @relation(fields: [moniteurId], references: [id])
+  moniteurId  String?
+  moniteur    User?     @relation(fields: [moniteurId], references: [id])
   date        DateTime
   duration    Int       @default(60) // minutes
   note        String?

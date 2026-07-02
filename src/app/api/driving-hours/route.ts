@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { candidateId, moniteurId, date, duration, note } = body;
 
-  if (!candidateId || !moniteurId || !date) {
+  if (!candidateId || !date) {
     return Response.json({ error: "Champs requis manquants" }, { status: 400 });
   }
 
@@ -58,19 +58,20 @@ export async function POST(request: Request) {
     return Response.json({ error: "Candidat introuvable" }, { status: 404 });
   }
 
-  // Verify moniteur belongs to this auto-école
-  const moniteur = await prisma.user.findFirst({
-    where: { id: moniteurId, autoEcoleId, role: "MONITEUR" },
-  });
-
-  if (!moniteur) {
-    return Response.json({ error: "Moniteur introuvable" }, { status: 404 });
+  // Moniteur optionnel : on ne le vérifie que s'il est fourni
+  if (moniteurId) {
+    const moniteur = await prisma.user.findFirst({
+      where: { id: moniteurId, autoEcoleId, role: "MONITEUR" },
+    });
+    if (!moniteur) {
+      return Response.json({ error: "Moniteur introuvable" }, { status: 404 });
+    }
   }
 
   const drivingHour = await prisma.drivingHour.create({
     data: {
       candidateId,
-      moniteurId,
+      moniteurId: moniteurId || null,
       date: new Date(date),
       duration: duration ?? 60,
       note: note || null,

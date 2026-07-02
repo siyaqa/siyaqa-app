@@ -9,7 +9,7 @@ interface DrivingHour {
   duration: number;
   note: string | null;
   candidate: { firstName: string; lastName: string };
-  moniteur: { fullName: string };
+  moniteur: { fullName: string } | null;
 }
 
 interface CandidateOption { id: string; firstName: string; lastName: string }
@@ -95,7 +95,8 @@ export default function DrivingPage() {
                 <div>
                   <p className="font-medium text-sm">{h.candidate.firstName} {h.candidate.lastName}</p>
                   <p className="text-xs text-muted">
-                    {new Date(h.date).toLocaleDateString("fr-MA")} · {h.moniteur.fullName}
+                    {new Date(h.date).toLocaleDateString("fr-MA")}
+                    {h.moniteur && ` · ${h.moniteur.fullName}`}
                     {h.note && ` · ${h.note}`}
                   </p>
                 </div>
@@ -122,9 +123,9 @@ export default function DrivingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Moniteur</label>
-                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
-                  <option value="">Choisir</option>
+                <label className="block text-sm font-medium mb-1">Moniteur (optionnel)</label>
+                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">Aucun</option>
                   {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
               </div>

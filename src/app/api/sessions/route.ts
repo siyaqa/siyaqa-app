@@ -130,7 +130,7 @@ export async function PATCH(request: Request) {
     await tx.session.update({ where: { id }, data: { completed } });
 
     if (existing.type === "CONDUITE") {
-      if (completed && existing.moniteurId) {
+      if (completed) {
         // durée (minutes) déduite des horaires "HH:MM"
         const [sh, sm] = existing.startTime.split(":").map(Number);
         const [eh, em] = existing.endTime.split(":").map(Number);
