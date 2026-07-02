@@ -147,7 +147,7 @@ export default function DashboardPage() {
             <div>
               <h2 className="font-semibold text-sm">Parrainez, gagnez des jours gratuits</h2>
               <p className="text-xs text-muted">
-                +7 jours par auto-école invitée qui confirme son email (max 2 → +14 jours)
+                +7 jours offerts pour chaque auto-école que vous parrainez
               </p>
             </div>
           </div>
@@ -172,10 +172,11 @@ export default function DashboardPage() {
               )}
             </button>
           </div>
-          <p className="text-xs text-muted mt-2">
-            Récompenses gagnées : <b>{stats.referralRewardsGiven}/2</b>
-            {stats.referralRewardsGiven >= 2 && " — plafond atteint, merci !"}
-          </p>
+          {stats.referralRewardsGiven > 0 && (
+            <p className="text-xs text-green-600 mt-2">
+              Vous avez déjà gagné <b>{stats.referralRewardsGiven * 7} jours gratuits</b> grâce au parrainage 🎉
+            </p>
+          )}
         </div>
       )}
     </div>
