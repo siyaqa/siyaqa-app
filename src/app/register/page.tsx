@@ -89,11 +89,6 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Siyaqi</h1>
           <p className="text-[#64748b] mt-1">Créez votre compte auto-école</p>
-          {ref && (
-            <p className="text-xs text-green-600 mt-2 bg-green-50 inline-block px-3 py-1 rounded-full">
-              🎁 Invité par un partenaire
-            </p>
-          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
