@@ -150,6 +150,8 @@ model Session {
   note        String?
   createdAt   DateTime    @default(now())
 
+  autoDrivingHour DrivingHour? // heure de conduite générée si séance CONDUITE terminée
+
   @@map("sessions")
 }
 
@@ -165,6 +167,10 @@ model DrivingHour {
   duration    Int       @default(60) // minutes
   note        String?
   createdAt   DateTime  @default(now())
+
+  // Lien vers la séance Planning qui l'a générée (auto) — unique pour éviter les doublons
+  sourceSessionId String?  @unique
+  sourceSession   Session? @relation(fields: [sourceSessionId], references: [id], onDelete: Cascade)
 
   @@map("driving_hours")
 }

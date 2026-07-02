@@ -203,6 +203,17 @@ export default function PlanningPage() {
     }
   }
 
+  // Bascule une séance terminée/à venir. Une séance Conduite terminée
+  // ajoute automatiquement l'heure de conduite correspondante.
+  async function toggleCompleted(s: Session) {
+    const res = await fetch("/api/sessions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: s.id, completed: !s.completed }),
+    });
+    if (res.ok) fetchSessions();
+  }
+
   function openFormForDate(dateStr: string) {
     setForm((prev) => ({ ...prev, date: dateStr }));
     setShowForm(true);
@@ -526,11 +537,17 @@ export default function PlanningPage() {
                       </p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                    ${s.completed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}
-                  `}>
-                    {s.completed ? "Terminée" : "À venir"}
-                  </span>
+                  <button
+                    onClick={() => toggleCompleted(s)}
+                    title={s.completed ? "Cliquer pour annuler" : "Cliquer pour marquer terminée"}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors flex-shrink-0
+                      ${s.completed
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"}
+                    `}
+                  >
+                    {s.completed ? "✓ Terminée" : "Marquer terminée"}
+                  </button>
                 </div>
               ))}
             </div>

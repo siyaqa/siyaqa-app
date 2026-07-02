@@ -99,3 +99,67 @@ export async function POST(request: Request) {
 
   return NextResponse.json(newSession, { status: 201 });
 }
+
+// PATCH — marquer une séance terminée / non terminée.
+// Une séance CONDUITE terminée crée automatiquement l'heure de conduite (une seule fois).
+export async function PATCH(request: Request) {
+  const check = await checkSubscription();
+  if (check.error) return check.error;
+  const { session, autoEcoleId } = check;
+
+  const role = (session.user as Record<string, unknown>).role as string;
+  if (role !== "GERANT" && role !== "MONITEUR") {
+    return Response.json({ error: "Accès refusé" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const { id, completed } = body;
+  if (!id || typeof completed !== "boolean") {
+    return Response.json({ error: "Paramètres invalides" }, { status: 400 });
+  }
+
+  // La séance doit appartenir à cette auto-école
+  const existing = await prisma.session.findFirst({
+    where: { id, candidate: { autoEcoleId } },
+  });
+  if (!existing) {
+    return Response.json({ error: "Séance introuvable" }, { status: 404 });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.session.update({ where: { id }, data: { completed } });
+
+    if (existing.type === "CONDUITE") {
+      if (completed && existing.moniteurId) {
+        // durée (minutes) déduite des horaires "HH:MM"
+        const [sh, sm] = existing.startTime.split(":").map(Number);
+        const [eh, em] = existing.endTime.split(":").map(Number);
+        let duration = eh * 60 + em - (sh * 60 + sm);
+        if (!Number.isFinite(duration) || duration <= 0) duration = 60;
+
+        await tx.drivingHour.upsert({
+          where: { sourceSessionId: existing.id },
+          create: {
+            sourceSessionId: existing.id,
+            candidateId: existing.candidateId,
+            moniteurId: existing.moniteurId,
+            date: existing.date,
+            duration,
+            note: existing.note,
+          },
+          update: {
+            candidateId: existing.candidateId,
+            moniteurId: existing.moniteurId,
+            date: existing.date,
+            duration,
+          },
+        });
+      } else if (!completed) {
+        // séance dé-cochée → on retire l'heure auto-générée
+        await tx.drivingHour.deleteMany({ where: { sourceSessionId: existing.id } });
+      }
+    }
+  });
+
+  return NextResponse.json({ ok: true });
+}
