@@ -10,9 +10,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, city, fullName, username, email, password, phone, ref } = body;
+    const { name, city, fullName, email, password, phone, ref } = body;
 
-    if (!name || !city || !fullName || !username || !email || !password) {
+    if (!name || !city || !fullName || !email || !password) {
       return NextResponse.json(
         { error: "Tous les champs obligatoires doivent être remplis." },
         { status: 400 }
@@ -31,15 +31,10 @@ export async function POST(request: Request) {
     }
 
     const normEmail = email.trim().toLowerCase();
+    // L'email sert d'identifiant de connexion (username = email)
+    const username = normEmail;
 
-    const [existingUser, existingEmail] = await Promise.all([
-      prisma.user.findUnique({ where: { username } }),
-      prisma.user.findUnique({ where: { email: normEmail } }),
-    ]);
-
-    if (existingUser) {
-      return NextResponse.json({ error: "Ce nom d'utilisateur est déjà pris." }, { status: 409 });
-    }
+    const existingEmail = await prisma.user.findUnique({ where: { email: normEmail } });
     if (existingEmail) {
       return NextResponse.json({ error: "Cette adresse email est déjà utilisée." }, { status: 409 });
     }

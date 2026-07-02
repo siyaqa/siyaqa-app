@@ -26,7 +26,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Nom d'utilisateur ou mot de passe incorrect.");
+        setError("Email ou mot de passe incorrect.");
       } else {
         router.push("/dashboard");
       }
@@ -62,15 +62,15 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom d&apos;utilisateur
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent"
-              placeholder="votre.nom"
+              placeholder="vous@exemple.com"
             />
           </div>
 

@@ -13,8 +13,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username as string },
+        const input = (credentials.username as string).trim();
+        // Gérant : se connecte avec son email · Moniteur : avec son identifiant
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [{ username: input }, { email: input.toLowerCase() }],
+          },
           include: { autoEcole: true },
         });
 

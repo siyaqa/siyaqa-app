@@ -9,9 +9,9 @@ export default function RegisterPage() {
     name: "",
     city: "",
     fullName: "",
-    username: "",
     email: "",
     password: "",
+    confirmPassword: "",
     phone: "",
   });
   const [ref, setRef] = useState<string | null>(null);
@@ -32,6 +32,14 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (form.password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
@@ -98,8 +106,8 @@ export default function RegisterPage() {
           <Field label="Ville" name="city" value={form.city} onChange={handleChange} placeholder="Casablanca" required />
           <Field label="Votre nom complet" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Ahmed Benali" required />
           <Field label="Email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="vous@exemple.com" required />
-          <Field label="Nom d'utilisateur" name="username" value={form.username} onChange={handleChange} placeholder="ahmed.benali" required />
           <Field label="Mot de passe (min. 8 caractères)" name="password" type="password" value={form.password} onChange={handleChange} placeholder="••••••••" required />
+          <Field label="Confirmer le mot de passe" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} placeholder="••••••••" required />
           <Field label="Téléphone" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="0600000000" />
 
           <button type="submit" disabled={loading}
