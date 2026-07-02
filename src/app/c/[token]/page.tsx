@@ -125,7 +125,8 @@ export default async function CandidatePortal({
               {candidate.drivingHours.map((h) => (
                 <div key={h.id} className="flex justify-between text-xs">
                   <span className="text-gray-500">
-                    {new Date(h.date).toLocaleDateString("fr-MA")} · {h.moniteur.fullName}
+                    {new Date(h.date).toLocaleDateString("fr-MA")}
+                    {h.moniteur && ` · ${h.moniteur.fullName}`}
                   </span>
                   <span className="font-medium">{h.duration} min</span>
                 </div>
