@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       hashedPassword,
       phone: phone || null,
       role: "MONITEUR",
+      emailVerified: new Date(), // compte interne créé par le gérant → pas de confirmation email
       autoEcoleId,
     },
     select: {

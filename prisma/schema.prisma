@@ -57,6 +57,14 @@ model AutoEcole {
   trialEndsAt  DateTime
   createdAt    DateTime @default(now())
 
+  // === Parrainage ===
+  referralCode         String     @unique @default(cuid()) // code de son lien d'invitation
+  referredById         String? // école qui l'a parrainée (le cas échéant)
+  referredBy           AutoEcole? @relation("Referrals", fields: [referredById], references: [id])
+  referrals            AutoEcole[] @relation("Referrals")
+  referralRewardsGiven Int        @default(0) // nb de +7j gagnés comme parrain (plafond 2)
+  referralRewarded     Boolean    @default(false) // a déjà déclenché la récompense de son parrain
+
   users      User[]
   candidates Candidate[]
 
@@ -66,16 +74,19 @@ model AutoEcole {
 // === UTILISATEURS (Gérant + Moniteur) ===
 
 model User {
-  id             String   @id @default(cuid())
-  username       String   @unique
+  id             String    @id @default(cuid())
+  username       String    @unique
   hashedPassword String
   fullName       String
   role           Role
   phone          String?
-  isActive       Boolean  @default(true)
+  email          String?   @unique // email du gérant (obligatoire à l'inscription)
+  emailVerified  DateTime? // null tant que l'email n'est pas confirmé → compte inactif
+  verifyToken    String?   @unique // jeton du lien de confirmation
+  isActive       Boolean   @default(true)
   autoEcoleId    String
   autoEcole      AutoEcole @relation(fields: [autoEcoleId], references: [id])
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   sessions     Session[]
   drivingHours DrivingHour[]

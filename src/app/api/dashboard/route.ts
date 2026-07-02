@@ -19,6 +19,7 @@ export async function GET() {
     candidatesWithFees,
     todaySessions,
     recentPayments,
+    ecoleInfo,
   ] = await Promise.all([
     // Total candidates
     prisma.candidate.count({
@@ -69,6 +70,12 @@ export async function GET() {
       orderBy: { paidAt: "desc" },
       take: 5,
     }),
+
+    // Infos de parrainage de l'école
+    prisma.autoEcole.findUnique({
+      where: { id: autoEcoleId },
+      select: { referralCode: true, referralRewardsGiven: true },
+    }),
   ]);
 
   const totalRevenue = paymentsAgg._sum.amount || 0;
@@ -86,5 +93,7 @@ export async function GET() {
     pendingPayments,
     todaySessions,
     recentPayments,
+    referralCode: ecoleInfo?.referralCode ?? null,
+    referralRewardsGiven: ecoleInfo?.referralRewardsGiven ?? 0,
   });
 }

@@ -10,6 +10,11 @@ export async function checkSubscription() {
   }
 
   const user = session.user as Record<string, unknown>;
+
+  if (!user.emailVerified) {
+    return { error: NextResponse.json({ error: "Email non confirmé" }, { status: 403 }) };
+  }
+
   const autoEcoleId = user.autoEcoleId as string;
 
   const autoEcole = await prisma.autoEcole.findUnique({

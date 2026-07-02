@@ -20,6 +20,12 @@ export default async function DashboardLayout({
   }
 
   const user = session.user as Record<string, unknown>;
+
+  // Compte non confirmé par email → bloqué tant que l'email n'est pas validé
+  if (!user.emailVerified) {
+    redirect("/verify-pending");
+  }
+
   const role = (user.role as string) ?? "MONITEUR";
   const userName = (session.user?.name as string) ?? "Utilisateur";
   const autoEcoleName = (user.autoEcoleName as string) ?? "Auto-école";

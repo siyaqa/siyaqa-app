@@ -31,6 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.fullName,
           email: user.username,
           role: user.role,
+          emailVerified: user.emailVerified ? user.emailVerified.toISOString() : null,
           autoEcoleId: user.autoEcoleId,
           autoEcoleName: user.autoEcole.name,
           autoEcoleIsActive: user.autoEcole.isActive,
@@ -44,6 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as Record<string, unknown>).role;
+        token.emailVerified = (user as Record<string, unknown>).emailVerified;
         token.autoEcoleId = (user as Record<string, unknown>).autoEcoleId;
         token.autoEcoleName = (user as Record<string, unknown>).autoEcoleName;
         token.autoEcoleIsActive = (user as Record<string, unknown>).autoEcoleIsActive;
@@ -58,6 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const u = session.user as any;
         u.role = token.role;
+        u.emailVerified = token.emailVerified;
         u.autoEcoleId = token.autoEcoleId;
         u.autoEcoleName = token.autoEcoleName;
         u.autoEcoleIsActive = token.autoEcoleIsActive;

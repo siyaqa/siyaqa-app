@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CreditCard, Calendar, AlertCircle } from "lucide-react";
+import { Users, CreditCard, Calendar, AlertCircle, Gift, Copy, Check } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 
 interface DashboardStats {
@@ -16,11 +16,26 @@ interface DashboardStats {
     paidAt: string;
     candidate: { firstName: string; lastName: string };
   }[];
+  referralCode: string | null;
+  referralRewardsGiven: number;
 }
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const referralLink =
+    stats?.referralCode && typeof window !== "undefined"
+      ? `${window.location.origin}/register?ref=${stats.referralCode}`
+      : "";
+
+  const copyLink = () => {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -121,6 +136,48 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Parrainage */}
+      {stats.referralCode && (
+        <div className="bg-card rounded-2xl border border-border p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
+              <Gift className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-sm">Parrainez, gagnez des jours gratuits</h2>
+              <p className="text-xs text-muted">
+                +7 jours par auto-école invitée qui confirme son email (max 2 → +14 jours)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4">
+            <input
+              readOnly
+              value={referralLink}
+              className="flex-1 rounded-lg border border-border bg-gray-50 px-3 py-2 text-xs text-gray-600 truncate"
+            />
+            <button
+              onClick={copyLink}
+              className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Copié
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> Copier
+                </>
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-muted mt-2">
+            Récompenses gagnées : <b>{stats.referralRewardsGiven}/2</b>
+            {stats.referralRewardsGiven >= 2 && " — plafond atteint, merci !"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
