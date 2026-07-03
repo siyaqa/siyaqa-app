@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Plus, ChevronLeft, ChevronRight, Filter, X, Calendar, Clock } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Filter, X, Calendar, Clock, Check } from "lucide-react";
 
 interface Session {
   id: string;
@@ -537,17 +537,26 @@ export default function PlanningPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => toggleCompleted(s)}
-                    title={s.completed ? "Cliquer pour annuler" : "Cliquer pour marquer terminée"}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors flex-shrink-0
-                      ${s.completed
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"}
-                    `}
-                  >
-                    {s.completed ? "✓ Terminée" : "Marquer terminée"}
-                  </button>
+                  {s.completed ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+                        <Check className="w-3.5 h-3.5" /> Terminée
+                      </span>
+                      <button
+                        onClick={() => toggleCompleted(s)}
+                        className="text-[11px] text-muted hover:text-gray-700 underline"
+                      >
+                        annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => toggleCompleted(s)}
+                      className="inline-flex items-center gap-1 flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600 transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Terminer
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
