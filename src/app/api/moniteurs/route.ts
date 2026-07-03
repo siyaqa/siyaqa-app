@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSubscription } from "@/lib/check-subscription";
@@ -57,23 +58,16 @@ export async function POST(request: Request) {
     return Response.json({ error: "Accès refusé" }, { status: 403 });
   }
   const body = await request.json();
-  const { fullName, password, phone } = body;
+  const { fullName, phone } = body;
 
-  if (!fullName || !password) {
-    return Response.json({ error: "Champs requis manquants" }, { status: 400 });
+  if (!fullName) {
+    return Response.json({ error: "Le nom est requis" }, { status: 400 });
   }
 
-  if (typeof password !== "string" || password.length < 8) {
-    return Response.json(
-      { error: "Le mot de passe doit contenir au moins 8 caractères." },
-      { status: 400 }
-    );
-  }
-
-  // Identifiant de connexion unique, dérivé du nom complet
+  // Moniteur = simple nom (pas de connexion pour l'instant). On garde un
+  // identifiant unique pour l'attribution, et un mot de passe aléatoire inutilisé.
   const username = await uniqueUsername(slugify(fullName));
-
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(randomBytes(24).toString("hex"), 12);
 
   const moniteur = await prisma.user.create({
     data: {
