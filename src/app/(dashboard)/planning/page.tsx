@@ -241,20 +241,8 @@ export default function PlanningPage() {
 
       {/* Controls: navigation + view toggle + filters */}
       <div className="bg-card rounded-2xl border border-border p-3 space-y-3">
-        {/* Top row: nav + view */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button onClick={goToday} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-              Aujourd&apos;hui
-            </button>
-            <button onClick={() => navigate(1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
+        {/* Ligne 1 : mois + filtre + vue (tient sur mobile) */}
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold">
             {viewMode === "month"
               ? `${MONTHS_FR[currentDate.getMonth()]} ${currentDate.getFullYear()}`
@@ -270,7 +258,7 @@ export default function PlanningPage() {
             }
           </h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Filter button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -299,6 +287,19 @@ export default function PlanningPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Ligne 2 : navigation */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button onClick={goToday} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+            Aujourd&apos;hui
+          </button>
+          <button onClick={() => navigate(1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Filters panel */}
