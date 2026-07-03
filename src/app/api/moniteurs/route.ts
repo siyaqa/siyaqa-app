@@ -3,6 +3,29 @@ import { prisma } from "@/lib/prisma";
 import { checkSubscription } from "@/lib/check-subscription";
 import bcrypt from "bcryptjs";
 
+// Identifiant de connexion dérivé du nom complet (le moniteur n'a pas d'email)
+function slugify(s: string): string {
+  return (
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "") // enlève les accents
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, ".")
+      .replace(/^\.+|\.+$/g, "") || "moniteur"
+  );
+}
+
+async function uniqueUsername(base: string): Promise<string> {
+  let candidate = base;
+  let i = 1;
+  while (await prisma.user.findUnique({ where: { username: candidate } })) {
+    i++;
+    candidate = `${base}${i}`;
+  }
+  return candidate;
+}
+
 export async function GET() {
   const check = await checkSubscription();
   if (check.error) return check.error;
@@ -34,9 +57,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Accès refusé" }, { status: 403 });
   }
   const body = await request.json();
-  const { fullName, username, password, phone } = body;
+  const { fullName, password, phone } = body;
 
-  if (!fullName || !username || !password) {
+  if (!fullName || !password) {
     return Response.json({ error: "Champs requis manquants" }, { status: 400 });
   }
 
@@ -47,14 +70,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Check if username already exists
-  const existing = await prisma.user.findUnique({
-    where: { username },
-  });
-
-  if (existing) {
-    return Response.json({ error: "Nom d'utilisateur déjà pris" }, { status: 409 });
-  }
+  // Identifiant de connexion unique, dérivé du nom complet
+  const username = await uniqueUsername(slugify(fullName));
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
