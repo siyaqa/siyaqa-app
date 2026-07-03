@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Car, Clock } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Plus, Car, Clock, User, Filter, X } from "lucide-react";
 
 interface DrivingHour {
   id: string;
@@ -15,10 +15,13 @@ interface DrivingHour {
 interface CandidateOption { id: string; firstName: string; lastName: string }
 interface MoniteurOption { id: string; fullName: string }
 
+const EMPTY_FILTERS = { candidateId: "", moniteurId: "", from: "", to: "" };
+
 export default function DrivingPage() {
   const [hours, setHours] = useState<DrivingHour[]>([]);
   const [candidates, setCandidates] = useState<CandidateOption[]>([]);
   const [moniteurs, setMoniteurs] = useState<MoniteurOption[]>([]);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -31,21 +34,36 @@ export default function DrivingPage() {
     note: "",
   });
 
+  const fetchHours = useCallback(async () => {
+    const p = new URLSearchParams();
+    if (filters.candidateId) p.set("candidateId", filters.candidateId);
+    if (filters.moniteurId) p.set("moniteurId", filters.moniteurId);
+    if (filters.from) p.set("from", filters.from);
+    if (filters.to) p.set("to", filters.to);
+    const res = await fetch(`/api/driving-hours?${p.toString()}`);
+    if (res.ok) setHours(await res.json());
+    else setError("Impossible de charger les données.");
+  }, [filters]);
+
+  // Candidats + moniteurs (une fois)
   useEffect(() => {
     Promise.all([
-      fetch("/api/driving-hours").then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
-      fetch("/api/candidates").then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
-      fetch("/api/moniteurs").then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
-    ]).then(([h, c, m]) => {
-      setHours(h);
-      setCandidates(c);
-      setMoniteurs(m);
-    }).catch(() => {
-      setError("Impossible de charger les données.");
-    }).finally(() => {
-      setLoading(false);
-    });
+      fetch("/api/candidates").then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/moniteurs").then((r) => (r.ok ? r.json() : [])),
+    ])
+      .then(([c, m]) => { setCandidates(c); setMoniteurs(m); })
+      .catch(() => setError("Impossible de charger les données."));
   }, []);
+
+  // (Re)charge les heures quand les filtres changent
+  useEffect(() => {
+    setLoading(true);
+    fetchHours().finally(() => setLoading(false));
+  }, [fetchHours]);
+
+  const filtersActive = !!(filters.candidateId || filters.moniteurId || filters.from || filters.to);
+  const totalMin = hours.reduce((s, h) => s + h.duration, 0);
+  const inputCls = "px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,8 +80,7 @@ export default function DrivingPage() {
     });
     if (res.ok) {
       setShowForm(false);
-      const updated = await fetch("/api/driving-hours").then((r) => r.json());
-      setHours(updated);
+      fetchHours();
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error || "Erreur lors de l'ajout.");
@@ -80,10 +97,43 @@ export default function DrivingPage() {
         </button>
       </div>
 
+      {/* Filtres */}
+      <div className="bg-card rounded-2xl p-3 border border-border flex flex-wrap items-center gap-2">
+        <Filter className="w-4 h-4 text-muted flex-shrink-0" />
+        <select value={filters.candidateId} onChange={(e) => setFilters({ ...filters, candidateId: e.target.value })} className={inputCls}>
+          <option value="">Tous les candidats</option>
+          {candidates.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
+        </select>
+        {moniteurs.length > 0 && (
+          <select value={filters.moniteurId} onChange={(e) => setFilters({ ...filters, moniteurId: e.target.value })} className={inputCls}>
+            <option value="">Tous les moniteurs</option>
+            {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
+          </select>
+        )}
+        <input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} title="Du" className={inputCls} />
+        <input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} title="Au" className={inputCls} />
+        {filtersActive && (
+          <button onClick={() => setFilters(EMPTY_FILTERS)} className="inline-flex items-center gap-1 text-xs text-muted hover:text-gray-700 px-2 py-2">
+            <X className="w-3.5 h-3.5" /> Réinitialiser
+          </button>
+        )}
+      </div>
+
+      {/* Résumé */}
+      {!loading && hours.length > 0 && (
+        <p className="text-xs text-muted px-1">
+          {hours.length} séance(s) · Total : <b>{Math.floor(totalMin / 60)}h {totalMin % 60}min</b>
+        </p>
+      )}
+
+      {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{error}</div>}
+
       {loading ? (
         <div className="text-center py-10 text-muted">Chargement...</div>
       ) : hours.length === 0 ? (
-        <div className="text-center py-10 text-muted">Aucune heure de conduite enregistrée</div>
+        <div className="text-center py-10 text-muted">
+          {filtersActive ? "Aucune heure pour ces filtres" : "Aucune heure de conduite enregistrée"}
+        </div>
       ) : (
         <div className="space-y-2">
           {hours.map((h) => (
@@ -94,10 +144,14 @@ export default function DrivingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-sm">{h.candidate.firstName} {h.candidate.lastName}</p>
-                  <p className="text-xs text-muted">
-                    {new Date(h.date).toLocaleDateString("fr-MA")}
-                    {h.moniteur && ` · ${h.moniteur.fullName}`}
-                    {h.note && ` · ${h.note}`}
+                  <p className="text-xs text-muted flex items-center gap-1.5 flex-wrap">
+                    <span>{new Date(h.date).toLocaleDateString("fr-MA")}</span>
+                    <span>·</span>
+                    <span className={`inline-flex items-center gap-1 ${h.moniteur ? "text-gray-600" : "text-gray-400 italic"}`}>
+                      <User className="w-3 h-3" />
+                      {h.moniteur ? h.moniteur.fullName : "Sans moniteur"}
+                    </span>
+                    {h.note && (<><span>·</span><span>{h.note}</span></>)}
                   </p>
                 </div>
               </div>
@@ -117,14 +171,14 @@ export default function DrivingPage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Candidat</label>
-                <select value={form.candidateId} onChange={(e) => setForm({ ...form, candidateId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+                <select value={form.candidateId} onChange={(e) => setForm({ ...form, candidateId: e.target.value })} className={`w-full ${inputCls}`} required>
                   <option value="">Choisir</option>
                   {candidates.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Moniteur (optionnel)</label>
-                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className={`w-full ${inputCls}`}>
                   <option value="">Aucun</option>
                   {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
@@ -132,16 +186,16 @@ export default function DrivingPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">Date</label>
-                  <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                  <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={`w-full ${inputCls}`} required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Durée (min)</label>
-                  <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                  <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className={`w-full ${inputCls}`} required />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Note</label>
-                <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className={`w-full ${inputCls}`} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-gray-50">Annuler</button>

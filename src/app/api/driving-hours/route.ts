@@ -8,13 +8,25 @@ export async function GET(request: NextRequest) {
   const { autoEcoleId } = check;
   const { searchParams } = request.nextUrl;
   const candidateId = searchParams.get("candidateId");
+  const moniteurId = searchParams.get("moniteurId");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   const where: Record<string, unknown> = {
     candidate: { autoEcoleId },
   };
 
-  if (candidateId) {
-    where.candidateId = candidateId;
+  if (candidateId) where.candidateId = candidateId;
+  if (moniteurId) where.moniteurId = moniteurId;
+  if (from || to) {
+    const range: Record<string, Date> = {};
+    if (from) range.gte = new Date(from);
+    if (to) {
+      const end = new Date(to);
+      end.setDate(end.getDate() + 1); // inclut le jour "au"
+      range.lt = end;
+    }
+    where.date = range;
   }
 
   const drivingHours = await prisma.drivingHour.findMany({
