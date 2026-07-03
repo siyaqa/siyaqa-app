@@ -99,8 +99,8 @@ export default function DrivingPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Heures de conduite</h1>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-hover transition-colors">
-          <Plus className="w-4 h-4" />
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-hover transition-colors flex-shrink-0 whitespace-nowrap">
+          <Plus className="w-4 h-4 flex-shrink-0" />
           Ajouter heure
         </button>
       </div>

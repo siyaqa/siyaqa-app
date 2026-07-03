@@ -166,15 +166,15 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-muted w-24 flex-shrink-0">Invitation {i + 1}</span>
+                  <span className="text-xs text-muted w-16 flex-shrink-0">Lien {i + 1}</span>
                   <input
                     readOnly
                     value={referralLink}
-                    className="flex-1 rounded-lg border border-border bg-gray-50 px-3 py-2 text-xs text-gray-600 truncate"
+                    className="flex-1 min-w-0 rounded-lg border border-border bg-gray-50 px-3 py-2 text-xs text-gray-600 truncate"
                   />
                   <button
                     onClick={() => copySlot(i)}
-                    className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0"
+                    className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-white bg-[#2563eb] hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 whitespace-nowrap"
                   >
                     {copiedSlot === i ? (
                       <>
