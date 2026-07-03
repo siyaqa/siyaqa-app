@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Search, CreditCard, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, CreditCard, Pencil, Trash2 } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 
 interface Candidate {
@@ -167,9 +167,6 @@ export default function CandidatesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
-                  <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/c/${c.publicToken}`)} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                    <ExternalLink className="w-3 h-3" /> Copier lien
-                  </button>
                   <button onClick={() => openEdit(c)} className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
                     <Pencil className="w-3 h-3" /> Modifier
                   </button>
