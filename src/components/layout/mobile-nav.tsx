@@ -7,6 +7,7 @@ import {
   Calendar,
   CreditCard,
   LayoutDashboard,
+  UserCog,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,12 @@ const mobileItems = [
     icon: Car,
     roles: ["GERANT", "MONITEUR"],
   },
+  {
+    label: "Moniteurs",
+    href: "/moniteurs",
+    icon: UserCog,
+    roles: ["GERANT"],
+  },
 ];
 
 export function MobileNav({ role }: { role: string }) {
@@ -51,7 +58,7 @@ export function MobileNav({ role }: { role: string }) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e2e8f0] bg-white md:hidden">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center py-2">
         {visibleItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -59,11 +66,11 @@ export function MobileNav({ role }: { role: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-2 py-1 text-xs transition-colors",
+                "flex flex-1 flex-col items-center gap-1 py-1 text-[11px] transition-colors",
                 isActive ? "text-[#2563eb]" : "text-[#64748b]"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-5 w-5 flex-shrink-0" />
               <span>{item.label}</span>
             </Link>
           );
