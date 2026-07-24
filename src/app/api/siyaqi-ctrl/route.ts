@@ -30,6 +30,7 @@ export async function GET(request: Request) {
           role: true,
           lastLoginAt: true,
           loginCount: true,
+          lastSeenAt: true,
         },
         orderBy: { role: "asc" }, // GERANT d'abord
       },

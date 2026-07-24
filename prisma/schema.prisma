@@ -89,6 +89,7 @@ model User {
   createdAt      DateTime  @default(now())
   lastLoginAt    DateTime? // null tant que l'utilisateur ne s'est jamais connecté
   loginCount     Int       @default(0)
+  lastSeenAt     DateTime? // dernier ping de présence (app ouverte) — « en ligne » si < 2 min
 
   sessions     Session[]
   drivingHours DrivingHour[]

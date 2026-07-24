@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Car, CheckCircle, XCircle, RefreshCw, LogIn, Users,
   CalendarClock, Search, Filter, TrendingUp, Clock, AlertTriangle, Ban,
-  Phone, UserX,
+  Phone, UserX, Wifi,
 } from "lucide-react";
 
 interface AutoEcole {
@@ -22,11 +22,19 @@ interface AutoEcole {
     role: "GERANT" | "MONITEUR";
     lastLoginAt: string | null;
     loginCount: number;
+    lastSeenAt: string | null;
   }[];
   _count: { candidates: number };
 }
 
-type StatusType = "all" | "active" | "expiring" | "expired" | "disabled" | "never";
+type StatusType = "all" | "active" | "expiring" | "expired" | "disabled" | "never" | "online";
+
+// « En ligne » = ping de présence reçu il y a moins de 2 min (l'app ping toutes les 60 s)
+const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+function isOnline(u: { lastSeenAt: string | null }) {
+  return !!u.lastSeenAt && Date.now() - new Date(u.lastSeenAt).getTime() < ONLINE_WINDOW_MS;
+}
 
 function timeAgo(dateStr: string) {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -132,8 +140,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StatusType>("all");
 
-  const fetchEcoles = useCallback(async () => {
-    setLoading(true);
+  const fetchEcoles = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/siyaqi-ctrl", {
@@ -197,9 +205,17 @@ export default function AdminPage() {
     }
   }, [secret, authenticated, fetchEcoles]);
 
+  // Rafraîchit silencieusement toutes les 60 s pour garder le statut « en ligne » à jour
+  useEffect(() => {
+    if (!authenticated) return;
+    const t = setInterval(() => fetchEcoles(true), 60_000);
+    return () => clearInterval(t);
+  }, [authenticated, fetchEcoles]);
+
   const stats = useMemo(() => {
     const total = ecoles.length;
     const neverLoggedIn = ecoles.filter(e => !getLastLogin(e)).length;
+    const online = ecoles.filter(e => e.users.some(isOnline)).length;
     let active = 0, expiring = 0, expired = 0, disabled = 0, totalCandidates = 0;
     const cities = new Set<string>();
     const newToday = ecoles.filter(e => {
@@ -218,7 +234,7 @@ export default function AdminPage() {
       cities.add(e.city);
     });
 
-    return { total, active, expiring, expired, disabled, totalCandidates, cities: cities.size, newToday, neverLoggedIn };
+    return { total, active, expiring, expired, disabled, totalCandidates, cities: cities.size, newToday, neverLoggedIn, online };
   }, [ecoles]);
 
   const filtered = useMemo(() => {
@@ -226,6 +242,8 @@ export default function AdminPage() {
       const s = getStatusInfo(e);
       if (filter === "never") {
         if (getLastLogin(e)) return false;
+      } else if (filter === "online") {
+        if (!e.users.some(isOnline)) return false;
       } else if (filter !== "all" && s.key !== filter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -275,7 +293,7 @@ export default function AdminPage() {
             <Car className="w-6 h-6 text-[#2563eb]" />
             <h1 className="text-lg font-bold">Siyaqi Admin</h1>
           </div>
-          <button onClick={fetchEcoles} disabled={loading}
+          <button onClick={() => fetchEcoles()} disabled={loading}
             className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -284,7 +302,7 @@ export default function AdminPage() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 text-gray-500 mb-1">
               <TrendingUp className="w-4 h-4" />
@@ -325,6 +343,14 @@ export default function AdminPage() {
             <p className="text-2xl font-bold text-gray-700">{stats.neverLoggedIn}</p>
             <p className="text-xs text-gray-400">Inscrits sans login</p>
           </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-emerald-600 mb-1">
+              <Wifi className="w-4 h-4" />
+              <span className="text-xs font-medium">En ligne</span>
+            </div>
+            <p className="text-2xl font-bold text-emerald-600">{stats.online}</p>
+            <p className="text-xs text-gray-400">En ce moment</p>
+          </div>
         </div>
 
         {/* Search + Filters */}
@@ -344,6 +370,7 @@ export default function AdminPage() {
               ["expired", "Expirés"],
               ["disabled", "Off"],
               ["never", "Jamais connecté"],
+              ["online", "En ligne"],
             ] as [StatusType, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setFilter(key)}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -362,6 +389,7 @@ export default function AdminPage() {
             const gerant = ecole.users.find(u => u.role === "GERANT") ?? ecole.users[0];
             const moniteurs = ecole.users.filter(u => u.role === "MONITEUR");
             const lastLogin = getLastLogin(ecole);
+            const online = ecole.users.some(isOnline);
             const daysLeft = Math.max(0, Math.ceil((new Date(ecole.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
             return (
@@ -377,7 +405,15 @@ export default function AdminPage() {
                       {new Date(ecole.createdAt).toDateString() === new Date().toDateString() && (
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full text-blue-600 bg-blue-50">Nouveau</span>
                       )}
-                      {lastLogin ? (
+                      {online ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full text-emerald-700 bg-emerald-50">
+                          <span className="relative flex w-2 h-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-500" />
+                          </span>
+                          En ligne
+                        </span>
+                      ) : lastLogin ? (
                         <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-emerald-700 bg-emerald-50">
                           <LogIn className="w-3 h-3" /> {timeAgo(lastLogin)}
                         </span>
@@ -410,15 +446,17 @@ export default function AdminPage() {
                           {gerant.phone || ecole.phone}
                         </a>
                       )}
-                      <span className={gerant.lastLoginAt ? "text-gray-500" : "text-orange-600 font-medium"}>
-                        {gerant.lastLoginAt
+                      <span className={isOnline(gerant) ? "text-emerald-600 font-medium" : gerant.lastLoginAt ? "text-gray-500" : "text-orange-600 font-medium"}>
+                        {isOnline(gerant)
+                          ? `En ligne maintenant · ${gerant.loginCount} connexion${gerant.loginCount > 1 ? "s" : ""}`
+                          : gerant.lastLoginAt
                           ? `Dernière connexion ${timeAgo(gerant.lastLoginAt)} · ${gerant.loginCount} connexion${gerant.loginCount > 1 ? "s" : ""}`
                           : "Ne s'est jamais connecté"}
                       </span>
                     </div>
                     {moniteurs.length > 0 && (
                       <div className="text-xs text-gray-400">
-                        Moniteurs : {moniteurs.map(m => `${m.fullName} (${m.lastLoginAt ? timeAgo(m.lastLoginAt) : "jamais connecté"})`).join(" · ")}
+                        Moniteurs : {moniteurs.map(m => `${m.fullName} (${isOnline(m) ? "en ligne" : m.lastLoginAt ? timeAgo(m.lastLoginAt) : "jamais connecté"})`).join(" · ")}
                       </div>
                     )}
                   </div>

@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { TrialBanner } from "@/components/layout/trial-banner";
+import { PresencePing } from "@/components/layout/presence-ping";
 import { notifyAdmin } from "@/lib/notify";
 
 export default async function DashboardLayout({
@@ -76,6 +77,7 @@ export default async function DashboardLayout({
 
   return (
     <SessionProvider session={session}>
+      <PresencePing />
       <div className="min-h-screen bg-[#f8fafc]">
         <Sidebar role={role} />
         <div className="md:ml-64">
