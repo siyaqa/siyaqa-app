@@ -23,8 +23,15 @@ export async function GET(request: Request) {
   const ecoles = await prisma.autoEcole.findMany({
     include: {
       users: {
-        where: { role: "GERANT" },
-        select: { fullName: true, username: true, phone: true },
+        select: {
+          fullName: true,
+          username: true,
+          phone: true,
+          role: true,
+          lastLoginAt: true,
+          loginCount: true,
+        },
+        orderBy: { role: "asc" }, // GERANT d'abord
       },
       _count: { select: { candidates: true } },
     },

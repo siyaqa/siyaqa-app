@@ -30,6 +30,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
         if (!valid) return null;
 
+        // Trace la connexion — ne doit JAMAIS empêcher le login en cas d'échec
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date(), loginCount: { increment: 1 } },
+          });
+          await prisma.loginEvent.create({ data: { userId: user.id } });
+        } catch (e) {
+          console.error("login tracking failed:", e);
+        }
+
         return {
           id: user.id,
           name: user.fullName,

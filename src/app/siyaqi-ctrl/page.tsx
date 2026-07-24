@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Car, CheckCircle, XCircle, RefreshCw, LogIn, Users,
   CalendarClock, Search, Filter, TrendingUp, Clock, AlertTriangle, Ban,
-  Phone,
+  Phone, UserX,
 } from "lucide-react";
 
 interface AutoEcole {
@@ -15,11 +15,38 @@ interface AutoEcole {
   isActive: boolean;
   trialEndsAt: string;
   createdAt: string;
-  users: { fullName: string; username: string; phone: string | null }[];
+  users: {
+    fullName: string;
+    username: string;
+    phone: string | null;
+    role: "GERANT" | "MONITEUR";
+    lastLoginAt: string | null;
+    loginCount: number;
+  }[];
   _count: { candidates: number };
 }
 
-type StatusType = "all" | "active" | "expiring" | "expired" | "disabled";
+type StatusType = "all" | "active" | "expiring" | "expired" | "disabled" | "never";
+
+function timeAgo(dateStr: string) {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (mins < 1) return "à l'instant";
+  if (mins < 60) return `il y a ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `il y a ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `il y a ${days} j`;
+  return `le ${new Date(dateStr).toLocaleDateString("fr-FR")}`;
+}
+
+// Dernière connexion tous utilisateurs confondus (gérant + moniteurs)
+function getLastLogin(ecole: AutoEcole): string | null {
+  let last: string | null = null;
+  for (const u of ecole.users) {
+    if (u.lastLoginAt && (!last || u.lastLoginAt > last)) last = u.lastLoginAt;
+  }
+  return last;
+}
 
 function getStatusInfo(ecole: AutoEcole) {
   if (!ecole.isActive) return { key: "disabled" as const, label: "Désactivé", color: "text-red-600 bg-red-50", barColor: "bg-red-400", percent: 0 };
@@ -172,6 +199,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     const total = ecoles.length;
+    const neverLoggedIn = ecoles.filter(e => !getLastLogin(e)).length;
     let active = 0, expiring = 0, expired = 0, disabled = 0, totalCandidates = 0;
     const cities = new Set<string>();
     const newToday = ecoles.filter(e => {
@@ -190,16 +218,18 @@ export default function AdminPage() {
       cities.add(e.city);
     });
 
-    return { total, active, expiring, expired, disabled, totalCandidates, cities: cities.size, newToday };
+    return { total, active, expiring, expired, disabled, totalCandidates, cities: cities.size, newToday, neverLoggedIn };
   }, [ecoles]);
 
   const filtered = useMemo(() => {
     return ecoles.filter(e => {
       const s = getStatusInfo(e);
-      if (filter !== "all" && s.key !== filter) return false;
+      if (filter === "never") {
+        if (getLastLogin(e)) return false;
+      } else if (filter !== "all" && s.key !== filter) return false;
       if (search) {
         const q = search.toLowerCase();
-        const gerant = e.users[0];
+        const gerant = e.users.find(u => u.role === "GERANT") ?? e.users[0];
         const matchName = e.name.toLowerCase().includes(q);
         const matchCity = e.city.toLowerCase().includes(q);
         const matchGerant = gerant?.fullName.toLowerCase().includes(q);
@@ -254,7 +284,7 @@ export default function AdminPage() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 text-gray-500 mb-1">
               <TrendingUp className="w-4 h-4" />
@@ -287,6 +317,14 @@ export default function AdminPage() {
             <p className="text-2xl font-bold text-red-600">{stats.expired + stats.disabled}</p>
             <p className="text-xs text-gray-400">À relancer</p>
           </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <UserX className="w-4 h-4" />
+              <span className="text-xs font-medium">Jamais connectés</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-700">{stats.neverLoggedIn}</p>
+            <p className="text-xs text-gray-400">Inscrits sans login</p>
+          </div>
         </div>
 
         {/* Search + Filters */}
@@ -305,6 +343,7 @@ export default function AdminPage() {
               ["expiring", "Bientôt"],
               ["expired", "Expirés"],
               ["disabled", "Off"],
+              ["never", "Jamais connecté"],
             ] as [StatusType, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setFilter(key)}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -320,7 +359,9 @@ export default function AdminPage() {
         <div className="space-y-3">
           {filtered.map((ecole) => {
             const status = getStatusInfo(ecole);
-            const gerant = ecole.users[0];
+            const gerant = ecole.users.find(u => u.role === "GERANT") ?? ecole.users[0];
+            const moniteurs = ecole.users.filter(u => u.role === "MONITEUR");
+            const lastLogin = getLastLogin(ecole);
             const daysLeft = Math.max(0, Math.ceil((new Date(ecole.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
             return (
@@ -336,6 +377,15 @@ export default function AdminPage() {
                       {new Date(ecole.createdAt).toDateString() === new Date().toDateString() && (
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full text-blue-600 bg-blue-50">Nouveau</span>
                       )}
+                      {lastLogin ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-emerald-700 bg-emerald-50">
+                          <LogIn className="w-3 h-3" /> {timeAgo(lastLogin)}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-gray-500 bg-gray-100">
+                          <UserX className="w-3 h-3" /> Jamais connecté
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 mt-0.5">
                       {ecole.city} — Inscrit le {new Date(ecole.createdAt).toLocaleDateString("fr-FR")}
@@ -350,14 +400,26 @@ export default function AdminPage() {
 
                 {/* Gérant info */}
                 {gerant && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-3 bg-gray-50 rounded-lg px-3 py-2">
-                    <span><span className="font-medium">Gérant:</span> {gerant.fullName}</span>
-                    <span className="text-gray-400">({gerant.username})</span>
-                    {(gerant.phone || ecole.phone) && (
-                      <a href={`tel:${gerant.phone || ecole.phone}`} className="inline-flex items-center gap-1 text-[#2563eb] hover:underline">
-                        <Phone className="w-3.5 h-3.5" />
-                        {gerant.phone || ecole.phone}
-                      </a>
+                  <div className="mb-3 bg-gray-50 rounded-lg px-3 py-2 space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                      <span><span className="font-medium">Gérant:</span> {gerant.fullName}</span>
+                      <span className="text-gray-400">({gerant.username})</span>
+                      {(gerant.phone || ecole.phone) && (
+                        <a href={`tel:${gerant.phone || ecole.phone}`} className="inline-flex items-center gap-1 text-[#2563eb] hover:underline">
+                          <Phone className="w-3.5 h-3.5" />
+                          {gerant.phone || ecole.phone}
+                        </a>
+                      )}
+                      <span className={gerant.lastLoginAt ? "text-gray-500" : "text-orange-600 font-medium"}>
+                        {gerant.lastLoginAt
+                          ? `Dernière connexion ${timeAgo(gerant.lastLoginAt)} · ${gerant.loginCount} connexion${gerant.loginCount > 1 ? "s" : ""}`
+                          : "Ne s'est jamais connecté"}
+                      </span>
+                    </div>
+                    {moniteurs.length > 0 && (
+                      <div className="text-xs text-gray-400">
+                        Moniteurs : {moniteurs.map(m => `${m.fullName} (${m.lastLoginAt ? timeAgo(m.lastLoginAt) : "jamais connecté"})`).join(" · ")}
+                      </div>
                     )}
                   </div>
                 )}

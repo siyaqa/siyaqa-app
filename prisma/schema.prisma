@@ -87,11 +87,26 @@ model User {
   autoEcoleId    String
   autoEcole      AutoEcole @relation(fields: [autoEcoleId], references: [id])
   createdAt      DateTime  @default(now())
+  lastLoginAt    DateTime? // null tant que l'utilisateur ne s'est jamais connecté
+  loginCount     Int       @default(0)
 
   sessions     Session[]
   drivingHours DrivingHour[]
+  loginEvents  LoginEvent[]
 
   @@map("users")
+}
+
+// === HISTORIQUE DES CONNEXIONS ===
+
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("login_events")
 }
 
 // === CANDIDATS ===
