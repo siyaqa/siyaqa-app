@@ -57,21 +57,32 @@ export function MobileNav({ role }: { role: string }) {
   const visibleItems = mobileItems.filter((item) => item.roles.includes(role));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e2e8f0] bg-white md:hidden">
-      <div className="flex items-center py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-white pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgb(15_23_42/0.06)] md:hidden">
+      <div className="flex items-center pt-1.5">
         {visibleItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-1 text-[11px] transition-colors",
-                isActive ? "text-[#2563eb]" : "text-[#64748b]"
-              )}
+              aria-current={isActive ? "page" : undefined}
+              className="flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] transition-colors"
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
-              <span>{item.label}</span>
+              <span
+                className={cn(
+                  "flex items-center justify-center rounded-full px-4 py-1 transition-colors",
+                  isActive ? "bg-primary-light text-primary" : "text-muted"
+                )}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+              </span>
+              <span
+                className={cn(
+                  isActive ? "font-semibold text-primary" : "text-muted"
+                )}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}

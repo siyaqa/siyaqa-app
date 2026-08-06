@@ -20,24 +20,24 @@ export default async function VerifyPendingPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50/60 via-slate-50 to-slate-50 px-4">
       <div className="w-full max-w-sm text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2563eb] mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 shadow-lg shadow-indigo-600/25 mb-4">
           <MailCheck className="w-8 h-8 text-white" />
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <div className="bg-card rounded-2xl shadow-sm ring-1 ring-slate-200/70 p-6 sm:p-8 space-y-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Confirmez votre email</h1>
-            <p className="text-sm text-gray-500">
-              Votre compte n'est pas encore activé. Un email de confirmation a été envoyé
-              {user?.email ? <> à <b>{user.email}</b></> : ""}. Cliquez sur le lien qu'il contient.
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 mb-2">Confirmez votre email</h1>
+            <p className="text-sm text-muted">
+              Votre compte n&apos;est pas encore activé. Un email de confirmation a été envoyé
+              {user?.email ? <> à <b>{user.email}</b></> : ""}. Cliquez sur le lien qu&apos;il contient.
             </p>
           </div>
-          <p className="text-xs text-gray-400">Pensez à vérifier vos dossiers Spam / Promotions.</p>
+          <p className="text-xs text-muted">Pensez à vérifier vos dossiers Spam / Promotions.</p>
           <ResendButton />
         </div>
-        <p className="text-center text-sm text-[#64748b] mt-4">
-          <Link href="/login" className="text-[#2563eb] font-medium hover:underline">
+        <p className="text-center text-sm text-muted mt-4">
+          <Link href="/login" className="inline-flex py-2.5 text-primary font-medium hover:underline">
             Retour à la connexion
           </Link>
         </p>

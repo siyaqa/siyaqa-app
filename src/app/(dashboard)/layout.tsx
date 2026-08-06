@@ -78,12 +78,14 @@ export default async function DashboardLayout({
   return (
     <SessionProvider session={session}>
       <PresencePing />
-      <div className="min-h-screen bg-[#f8fafc]">
+      <div className="min-h-screen bg-background">
         <Sidebar role={role} />
         <div className="md:ml-64">
           <Header userName={userName} autoEcoleName={autoEcoleName} />
           {role === "GERANT" && <TrialBanner daysLeft={daysLeft} />}
-          <main className="p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+          <main className="p-4 pb-24 md:p-6 md:pb-6">
+            <div className="mx-auto w-full max-w-6xl">{children}</div>
+          </main>
         </div>
         <MobileNav role={role} />
       </div>

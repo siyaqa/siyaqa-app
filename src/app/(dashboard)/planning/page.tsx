@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Plus, ChevronLeft, ChevronRight, Filter, X, Calendar, Clock, Check } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Filter, X, Calendar, Clock, Check, AlertCircle } from "lucide-react";
 
 interface Session {
   id: string;
@@ -228,10 +228,10 @@ export default function PlanningPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Planning</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Planning</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-hover transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover shadow-sm shadow-primary/25 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Nouvelle séance</span>
@@ -239,67 +239,77 @@ export default function PlanningPage() {
         </button>
       </div>
 
-      {/* Controls: navigation + view toggle + filters */}
-      <div className="bg-card rounded-2xl border border-border p-3 space-y-3">
-        {/* Ligne 1 : mois + filtre + vue (tient sur mobile) */}
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">
-            {viewMode === "month"
-              ? `${MONTHS_FR[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-              : (() => {
-                  const week = getWeekDays(currentDate);
-                  const f = week[0];
-                  const l = week[6];
-                  if (f.getMonth() === l.getMonth()) {
-                    return `${f.getDate()} — ${l.getDate()} ${MONTHS_FR[f.getMonth()]}`;
-                  }
-                  return `${f.getDate()} ${MONTHS_FR[f.getMonth()].slice(0, 3)} — ${l.getDate()} ${MONTHS_FR[l.getMonth()].slice(0, 3)}`;
-                })()
-            }
-          </h2>
+      {/* Controls: navigation + view toggle + filters — une seule rangée */}
+      <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] p-3 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Navigation : chevrons collés au titre */}
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Période précédente"
+              className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-2 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h2 className="text-base font-semibold tabular-nums truncate">
+              {viewMode === "month"
+                ? `${MONTHS_FR[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                : (() => {
+                    const week = getWeekDays(currentDate);
+                    const f = week[0];
+                    const l = week[6];
+                    if (f.getMonth() === l.getMonth()) {
+                      return `${f.getDate()} — ${l.getDate()} ${MONTHS_FR[f.getMonth()]}`;
+                    }
+                    return `${f.getDate()} ${MONTHS_FR[f.getMonth()].slice(0, 3)} — ${l.getDate()} ${MONTHS_FR[l.getMonth()].slice(0, 3)}`;
+                  })()
+              }
+            </h2>
+            <button
+              onClick={() => navigate(1)}
+              aria-label="Période suivante"
+              className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-2 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={goToday}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-2 hover:bg-slate-200 transition-colors"
+            >
+              Aujourd&apos;hui
+            </button>
             {/* Filter button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`relative p-2 rounded-lg transition-colors ${showFilters ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}
+              aria-label="Filtres"
+              className={`relative p-2 rounded-lg transition-colors ${showFilters ? "bg-primary-light text-primary" : "text-muted hover:text-foreground hover:bg-surface-2"}`}
             >
               <Filter className="w-4 h-4" />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center tabular-nums">
                   {activeFilterCount}
                 </span>
               )}
             </button>
-            {/* View toggle */}
-            <div className="flex rounded-lg border border-border overflow-hidden">
+            {/* View toggle — segmenté iOS */}
+            <div className="flex p-0.5 rounded-lg bg-surface-2">
               <button
                 onClick={() => setViewMode("month")}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "month" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${viewMode === "month" ? "bg-white shadow-sm text-slate-900" : "text-muted"}`}
               >
                 Mois
               </button>
               <button
                 onClick={() => setViewMode("week")}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "week" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${viewMode === "week" ? "bg-white shadow-sm text-slate-900" : "text-muted"}`}
               >
                 Semaine
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Ligne 2 : navigation */}
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button onClick={goToday} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-            Aujourd&apos;hui
-          </button>
-          <button onClick={() => navigate(1)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Filters panel */}
@@ -308,7 +318,7 @@ export default function PlanningPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-border text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-3 py-1.5 rounded-xl border border-border bg-card text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow"
             >
               <option value="">Tous les types</option>
               <option value="CODE">Code</option>
@@ -317,7 +327,7 @@ export default function PlanningPage() {
             <select
               value={filterMoniteur}
               onChange={(e) => setFilterMoniteur(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-border text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-3 py-1.5 rounded-xl border border-border bg-card text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow"
             >
               <option value="">Tous les moniteurs</option>
               {moniteurs.map((m) => (
@@ -327,7 +337,7 @@ export default function PlanningPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-border text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-3 py-1.5 rounded-xl border border-border bg-card text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow"
             >
               <option value="">Tous les statuts</option>
               <option value="pending">À venir</option>
@@ -336,7 +346,7 @@ export default function PlanningPage() {
             {activeFilterCount > 0 && (
               <button
                 onClick={() => { setFilterType(""); setFilterMoniteur(""); setFilterStatus(""); }}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs text-danger hover:bg-danger-light rounded-lg transition-colors"
               >
                 <X className="w-3 h-3" />
                 Réinitialiser
@@ -346,13 +356,53 @@ export default function PlanningPage() {
         )}
       </div>
 
-      {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{error}</div>}
+      {error && (
+        <div role="alert" className="flex items-start gap-2 bg-danger-light border border-danger/20 text-danger text-sm rounded-xl p-3">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {loading ? (
-        <div className="text-center py-10 text-muted">Chargement...</div>
+        /* Skeleton de la même forme que le calendrier — pas de saut de mise en page */
+        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] overflow-hidden">
+          {viewMode === "month" ? (
+            <>
+              <div className="grid grid-cols-7 border-b border-border">
+                {DAYS_FR.map((d) => (
+                  <div key={d} className="py-2 text-center text-xs font-medium text-muted">
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {Array.from({ length: 42 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="min-h-[72px] md:min-h-[90px] border-b border-r border-border p-1.5 animate-pulse"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-surface-2" />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 border-b border-border last:border-b-0 animate-pulse"
+                >
+                  <div className="w-9 h-9 rounded-full bg-surface-2 shrink-0" />
+                  <div className="h-7 flex-1 rounded-lg bg-surface-2" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       ) : viewMode === "month" ? (
         /* ==================== MONTH VIEW ==================== */
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] overflow-hidden">
           {/* Day headers */}
           <div className="grid grid-cols-7 border-b border-border">
             {DAYS_FR.map((d) => (
@@ -369,6 +419,7 @@ export default function PlanningPage() {
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDay;
+              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
               const daySessions = filteredSessionsByDate[dateStr] || [];
               const codeCount = daySessions.filter((s) => s.type === "CODE").length;
               const conduiteCount = daySessions.filter((s) => s.type === "CONDUITE").length;
@@ -378,34 +429,50 @@ export default function PlanningPage() {
                   key={i}
                   onClick={() => setSelectedDay(isSelected ? null : dateStr)}
                   className={`relative min-h-[72px] md:min-h-[90px] p-1.5 border-b border-r border-border text-left transition-colors
-                    ${!isCurrentMonth ? "bg-gray-50/50" : "hover:bg-gray-50"}
-                    ${isSelected ? "bg-primary/5 ring-2 ring-inset ring-primary" : ""}
+                    ${isSelected
+                      ? "bg-primary/5 ring-2 ring-inset ring-primary"
+                      : isToday
+                        ? "bg-primary/5 hover:bg-surface-2"
+                        : !isCurrentMonth
+                          ? "bg-slate-50/50 hover:bg-surface-2"
+                          : isWeekend
+                            ? "bg-slate-50/60 hover:bg-surface-2"
+                            : "hover:bg-surface-2"
+                    }
                   `}
                 >
-                  <span className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full
+                  <span className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full tabular-nums
                     ${isToday ? "bg-primary text-white font-bold" : ""}
-                    ${!isCurrentMonth ? "text-gray-300" : "text-gray-700"}
+                    ${!isCurrentMonth ? "text-slate-300" : "text-slate-700"}
                   `}>
                     {day.getDate()}
                   </span>
 
-                  {/* Session dots / counts */}
+                  {/* Session counts */}
                   {daySessions.length > 0 && (
                     <div className="mt-1 space-y-0.5">
-                      {/* On mobile: dots only */}
-                      <div className="flex gap-0.5 md:hidden">
-                        {codeCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                        {conduiteCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+                      {/* On mobile: mini-chips compteurs */}
+                      <div className="flex flex-wrap gap-0.5 md:hidden">
+                        {codeCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-4 px-1 h-4 rounded text-[9px] font-semibold bg-blue-100 text-blue-700 tabular-nums">
+                            {codeCount}
+                          </span>
+                        )}
+                        {conduiteCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-4 px-1 h-4 rounded text-[9px] font-semibold bg-orange-100 text-orange-700 tabular-nums">
+                            {conduiteCount}
+                          </span>
+                        )}
                       </div>
                       {/* On desktop: mini labels */}
                       <div className="hidden md:block space-y-0.5">
                         {codeCount > 0 && (
-                          <div className="text-[10px] leading-tight px-1 py-0.5 rounded bg-blue-50 text-blue-700 truncate">
+                          <div className="text-[10px] leading-tight px-1 py-0.5 rounded bg-blue-50 text-blue-700 truncate tabular-nums">
                             {codeCount} Code
                           </div>
                         )}
                         {conduiteCount > 0 && (
-                          <div className="text-[10px] leading-tight px-1 py-0.5 rounded bg-orange-50 text-orange-700 truncate">
+                          <div className="text-[10px] leading-tight px-1 py-0.5 rounded bg-orange-50 text-orange-700 truncate tabular-nums">
                             {conduiteCount} Conduite
                           </div>
                         )}
@@ -419,7 +486,7 @@ export default function PlanningPage() {
         </div>
       ) : (
         /* ==================== WEEK VIEW ==================== */
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] overflow-hidden">
           {getWeekDays(currentDate).map((day, i) => {
             const dateStr = toDateStr(day);
             const isToday = dateStr === todayStr;
@@ -431,14 +498,14 @@ export default function PlanningPage() {
                 key={i}
                 onClick={() => setSelectedDay(isSelected ? null : dateStr)}
                 className={`w-full flex items-start gap-3 p-3 border-b border-border last:border-b-0 text-left transition-colors
-                  ${isSelected ? "bg-primary/5" : "hover:bg-gray-50"}
+                  ${isSelected ? "bg-primary/5" : isToday ? "bg-primary/5 hover:bg-surface-2" : "hover:bg-surface-2"}
                 `}
               >
                 {/* Day column */}
                 <div className="flex flex-col items-center min-w-[44px]">
                   <span className="text-[10px] font-medium text-muted uppercase">{DAYS_FR[i]}</span>
-                  <span className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold
-                    ${isToday ? "bg-primary text-white" : "text-gray-700"}
+                  <span className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold tabular-nums
+                    ${isToday ? "bg-primary text-white" : "text-slate-700"}
                   `}>
                     {day.getDate()}
                   </span>
@@ -447,7 +514,7 @@ export default function PlanningPage() {
                 {/* Sessions */}
                 <div className="flex-1 min-w-0">
                   {daySessions.length === 0 ? (
-                    <p className="text-xs text-gray-300 py-2">—</p>
+                    <p className="text-xs text-muted/40 py-2">—</p>
                   ) : (
                     <div className="space-y-1.5">
                       {daySessions.map((s) => (
@@ -459,10 +526,10 @@ export default function PlanningPage() {
                           `}
                         >
                           <Clock className="w-3 h-3 flex-shrink-0" />
-                          <span className="font-medium">{s.startTime}–{s.endTime}</span>
+                          <span className="font-medium tabular-nums">{s.startTime}–{s.endTime}</span>
                           <span className="truncate">{s.candidate.firstName} {s.candidate.lastName}</span>
                           {s.moniteur && <span className="text-[10px] opacity-70 hidden sm:inline">· {s.moniteur.fullName}</span>}
-                          {s.completed && <span className="ml-auto text-green-600 font-medium">✓</span>}
+                          {s.completed && <span className="ml-auto text-success font-medium">✓</span>}
                         </div>
                       ))}
                     </div>
@@ -471,7 +538,7 @@ export default function PlanningPage() {
 
                 {/* Count badge */}
                 {daySessions.length > 0 && (
-                  <span className="text-xs font-medium text-muted bg-gray-100 rounded-full px-2 py-0.5 flex-shrink-0">
+                  <span className="text-xs font-medium text-muted bg-surface-2 rounded-full px-2 py-0.5 flex-shrink-0 tabular-nums">
                     {daySessions.length}
                   </span>
                 )}
@@ -483,7 +550,7 @@ export default function PlanningPage() {
 
       {/* Selected day detail panel */}
       {selectedDay && (
-        <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm">
               {new Date(selectedDay + "T12:00:00").toLocaleDateString("fr-MA", {
@@ -495,22 +562,26 @@ export default function PlanningPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openFormForDate(selectedDay)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary-light rounded-lg hover:bg-indigo-100 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Ajouter
               </button>
               <button
                 onClick={() => setSelectedDay(null)}
-                className="p-1.5 rounded-lg hover:bg-gray-100"
+                aria-label="Fermer"
+                className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-2 transition-colors"
               >
-                <X className="w-3.5 h-3.5 text-muted" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {selectedDaySessions.length === 0 ? (
-            <p className="text-sm text-muted py-4 text-center">Aucune séance ce jour</p>
+            <div className="py-6 text-center">
+              <Calendar className="w-10 h-10 mx-auto text-muted/40 mb-3" />
+              <p className="text-sm text-muted">Aucune séance ce jour</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {selectedDaySessions.map((s) => (
@@ -525,14 +596,14 @@ export default function PlanningPage() {
                   `}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${s.type === "CODE" ? "bg-blue-100" : "bg-orange-100"}`}>
+                    <div className={`size-9 rounded-xl grid place-items-center shrink-0 ${s.type === "CODE" ? "bg-blue-100" : "bg-orange-100"}`}>
                       <Calendar className={`w-4 h-4 ${s.type === "CODE" ? "text-blue-600" : "text-orange-600"}`} />
                     </div>
                     <div>
                       <p className="font-medium text-sm">
                         {s.candidate.firstName} {s.candidate.lastName}
                       </p>
-                      <p className="text-xs text-muted">
+                      <p className="text-xs text-muted tabular-nums">
                         {s.type === "CODE" ? "Code" : "Conduite"} · {s.startTime} — {s.endTime}
                         {s.moniteur && ` · ${s.moniteur.fullName}`}
                       </p>
@@ -540,12 +611,12 @@ export default function PlanningPage() {
                   </div>
                   {s.completed ? (
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
                         <Check className="w-3.5 h-3.5" /> Terminée
                       </span>
                       <button
                         onClick={() => toggleCompleted(s)}
-                        className="text-[11px] text-muted hover:text-gray-700 underline"
+                        className="text-[11px] text-muted hover:text-foreground underline"
                       >
                         annuler
                       </button>
@@ -553,7 +624,7 @@ export default function PlanningPage() {
                   ) : (
                     <button
                       onClick={() => toggleCompleted(s)}
-                      className="inline-flex items-center gap-1 flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600 transition-colors"
+                      className="inline-flex items-center gap-1 flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-success hover:text-success transition-colors"
                     >
                       <Check className="w-3.5 h-3.5" /> Terminer
                     </button>
@@ -567,50 +638,55 @@ export default function PlanningPage() {
 
       {/* Stats bar */}
       <div className="flex items-center justify-center gap-6 py-2">
-        <div className="flex items-center gap-2 text-xs text-muted">
+        <div className="flex items-center gap-2 text-xs text-muted tabular-nums">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
           Code: {sessions.filter((s) => s.type === "CODE").length}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted">
+        <div className="flex items-center gap-2 text-xs text-muted tabular-nums">
           <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
           Conduite: {sessions.filter((s) => s.type === "CONDUITE").length}
         </div>
-        <div className="text-xs text-muted font-medium">
+        <div className="text-xs text-muted font-medium tabular-nums">
           Total: {sessions.length}
         </div>
       </div>
 
       {/* Add form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-0 sm:p-4">
+          <div className="bg-card w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[85dvh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-6 animate-[pop_.18s_ease-out]">
             <h2 className="text-lg font-bold mb-4">Nouvelle séance</h2>
-            {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-3">{error}</div>}
+            {error && (
+              <div role="alert" className="flex items-start gap-2 bg-danger-light border border-danger/20 text-danger text-sm rounded-xl p-3 mb-3">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Type</label>
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Type</label>
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow">
                   <option value="CODE">Code</option>
                   <option value="CONDUITE">Conduite</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Date</label>
-                <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Date</label>
+                <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow" required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Début</label>
-                  <input type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Début</label>
+                  <input type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Fin</label>
-                  <input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Fin</label>
+                  <input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow" required />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Candidat</label>
-                <select value={form.candidateId} onChange={(e) => setForm({ ...form, candidateId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Candidat</label>
+                <select value={form.candidateId} onChange={(e) => setForm({ ...form, candidateId: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow" required>
                   <option value="">Choisir</option>
                   {candidates.map((c) => (
                     <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
@@ -618,8 +694,8 @@ export default function PlanningPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Moniteur</label>
-                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Moniteur</label>
+                <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow">
                   <option value="">Aucun</option>
                   {moniteurs.map((m) => (
                     <option key={m.id} value={m.id}>{m.fullName}</option>
@@ -627,8 +703,8 @@ export default function PlanningPage() {
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-gray-50">Annuler</button>
-                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover">Ajouter</button>
+                <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card text-sm font-medium text-foreground/80 hover:bg-surface-2 transition">Annuler</button>
+                <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover shadow-sm shadow-primary/25 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed">Ajouter</button>
               </div>
             </form>
           </div>

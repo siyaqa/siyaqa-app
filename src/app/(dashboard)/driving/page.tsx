@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Car, Clock, User, Filter, X, Pencil, Trash2 } from "lucide-react";
+import { Plus, Car, User, Filter, X, Pencil, Trash2, AlertCircle } from "lucide-react";
 
 interface DrivingHour {
   id: string;
@@ -56,7 +56,7 @@ export default function DrivingPage() {
 
   const filtersActive = !!(filters.candidateId || filters.moniteurId || filters.from || filters.to);
   const totalMin = hours.reduce((s, h) => s + h.duration, 0);
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary";
+  const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-border bg-card text-base sm:text-sm placeholder:text-muted/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-shadow";
 
   function openCreate() { setForm(emptyForm()); setEditing(null); setError(""); setShowForm(true); }
   function openEdit(h: DrivingHour) {
@@ -97,80 +97,96 @@ export default function DrivingPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Heures de conduite</h1>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-hover transition-colors flex-shrink-0 whitespace-nowrap">
-          <Plus className="w-4 h-4 flex-shrink-0" />
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Heures de conduite</h1>
+        <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover shadow-sm shadow-primary/25 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+          <Plus className="w-4 h-4" />
           Ajouter heure
         </button>
       </div>
 
       {/* Filtres */}
-      <div className="bg-card rounded-2xl p-3 border border-border flex flex-wrap items-center gap-2">
-        <Filter className="w-4 h-4 text-muted flex-shrink-0" />
-        <select value={filters.candidateId} onChange={(e) => setFilters({ ...filters, candidateId: e.target.value })} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Tous les candidats</option>
-          {candidates.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
-        </select>
-        {moniteurs.length > 0 && (
-          <select value={filters.moniteurId} onChange={(e) => setFilters({ ...filters, moniteurId: e.target.value })} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Tous les moniteurs</option>
-            {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
+      <div className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] p-3.5 sm:p-4">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <Filter className="hidden sm:block w-4 h-4 text-muted shrink-0" />
+          <select value={filters.candidateId} onChange={(e) => setFilters({ ...filters, candidateId: e.target.value })} className={`${inputCls} sm:w-auto min-w-0`}>
+            <option value="">Tous les candidats</option>
+            {candidates.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
           </select>
-        )}
-        <input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} title="Du" className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        <input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} title="Au" className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        {filtersActive && (
-          <button onClick={() => setFilters(EMPTY_FILTERS)} className="inline-flex items-center gap-1 text-xs text-muted hover:text-gray-700 px-2 py-2">
-            <X className="w-3.5 h-3.5" /> Réinitialiser
-          </button>
-        )}
+          {moniteurs.length > 0 && (
+            <select value={filters.moniteurId} onChange={(e) => setFilters({ ...filters, moniteurId: e.target.value })} className={`${inputCls} sm:w-auto min-w-0`}>
+              <option value="">Tous les moniteurs</option>
+              {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
+            </select>
+          )}
+          <label className="block min-w-0">
+            <span className="block text-[11px] text-muted mb-0.5">Du</span>
+            <input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} title="Du" className={`${inputCls} sm:w-auto min-w-0`} />
+          </label>
+          <label className="block min-w-0">
+            <span className="block text-[11px] text-muted mb-0.5">Au</span>
+            <input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} title="Au" className={`${inputCls} sm:w-auto min-w-0`} />
+          </label>
+          {filtersActive && (
+            <button onClick={() => setFilters(EMPTY_FILTERS)} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card text-sm font-medium text-foreground/80 hover:bg-surface-2 transition">
+              <X className="w-4 h-4" /> Réinitialiser
+            </button>
+          )}
+        </div>
       </div>
 
       {!loading && hours.length > 0 && (
-        <p className="text-xs text-muted px-1">
+        <p className="text-xs text-muted px-1 tabular-nums">
           {hours.length} séance(s) · Total : <b>{Math.floor(totalMin / 60)}h {totalMin % 60}min</b>
         </p>
       )}
 
-      {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{error}</div>}
+      {error && (
+        <div role="alert" className="flex items-start gap-2 bg-danger-light border border-danger/20 text-danger text-sm rounded-xl p-3">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {loading ? (
-        <div className="text-center py-10 text-muted">Chargement...</div>
+        <div className="space-y-2" aria-hidden="true">
+          <div className="h-[72px] rounded-2xl bg-card border border-border animate-pulse" />
+          <div className="h-[72px] rounded-2xl bg-card border border-border animate-pulse" />
+          <div className="h-[72px] rounded-2xl bg-card border border-border animate-pulse" />
+        </div>
       ) : hours.length === 0 ? (
-        <div className="text-center py-10 text-muted">
-          {filtersActive ? "Aucune heure pour ces filtres" : "Aucune heure de conduite enregistrée"}
+        <div className="bg-card border border-dashed border-border rounded-2xl py-12 px-6 text-center">
+          <Car className="w-10 h-10 mx-auto text-muted/40 mb-3" />
+          <p className="text-sm text-muted">
+            {filtersActive ? "Aucune heure pour ces filtres" : "Aucune heure de conduite enregistrée"}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
           {hours.map((h) => (
-            <div key={h.id} className="bg-card rounded-2xl p-4 border border-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-orange-50">
-                  <Car className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{h.candidate.firstName} {h.candidate.lastName}</p>
-                  <p className="text-xs text-muted flex items-center gap-1.5 flex-wrap">
-                    <span>{new Date(h.date).toLocaleDateString("fr-MA")}</span>
-                    <span>·</span>
-                    <span className={`inline-flex items-center gap-1 ${h.moniteur ? "text-gray-600" : "text-gray-400 italic"}`}>
-                      <User className="w-3 h-3" />
-                      {h.moniteur ? h.moniteur.fullName : "Sans moniteur"}
-                    </span>
-                    {h.note && (<><span>·</span><span>{h.note}</span></>)}
-                  </p>
-                </div>
+            <div key={h.id} className="bg-card rounded-2xl border border-border shadow-[0_1px_2px_rgb(15_23_42/0.04)] p-3.5 sm:p-4 flex items-center gap-3">
+              <div className="size-9 rounded-xl grid place-items-center shrink-0 bg-amber-50 text-amber-600">
+                <Car className="w-4 h-4" />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium inline-flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-muted" />{h.duration} min
-                </span>
-                <button onClick={() => openEdit(h)} title="Modifier" className="text-gray-400 hover:text-gray-700">
-                  <Pencil className="w-4 h-4" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{h.candidate.firstName} {h.candidate.lastName}</p>
+                <p className="text-xs text-muted truncate">
+                  <span>{new Date(h.date).toLocaleDateString("fr-MA")}</span>
+                  <span> · </span>
+                  <span className={`inline-flex items-center gap-1 ${h.moniteur ? "" : "text-muted/70 italic"}`}>
+                    <User className="w-3 h-3" />
+                    {h.moniteur ? h.moniteur.fullName : "Sans moniteur"}
+                  </span>
+                  {h.note && <span> · {h.note}</span>}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-2 tabular-nums">{h.duration} min</span>
+                <button onClick={() => openEdit(h)} aria-label="Modifier" title="Modifier" className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <Pencil className="w-6 h-6" />
                 </button>
-                <button onClick={() => handleDelete(h)} title="Supprimer" className="text-gray-400 hover:text-red-600">
-                  <Trash2 className="w-4 h-4" />
+                <button onClick={() => handleDelete(h)} aria-label="Supprimer" title="Supprimer" className="p-2 rounded-lg text-muted hover:text-danger hover:bg-danger-light transition-colors">
+                  <Trash2 className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -180,21 +196,31 @@ export default function DrivingPage() {
 
       {/* Create / Edit modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold mb-4">{editing ? "Modifier l'heure de conduite" : "Nouvelle heure de conduite"}</h2>
-            {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-3">{error}</div>}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-0 sm:p-4">
+          <div className="bg-card w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[85dvh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-6 animate-[pop_.18s_ease-out]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">{editing ? "Modifier l'heure de conduite" : "Nouvelle heure de conduite"}</h2>
+              <button type="button" onClick={closeForm} aria-label="Fermer" className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-2 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            {error && (
+              <div role="alert" className="flex items-start gap-2 bg-danger-light border border-danger/20 text-danger text-sm rounded-xl p-3 mb-3">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-3">
               {editing ? (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Candidat</label>
-                  <p className="px-3 py-2 rounded-lg bg-gray-50 border border-border text-sm text-gray-600">
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Candidat</label>
+                  <p className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-surface-2 text-base sm:text-sm text-muted">
                     {editing.candidate.firstName} {editing.candidate.lastName}
                   </p>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Candidat</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Candidat</label>
                   <select value={form.candidateId} onChange={(e) => setForm({ ...form, candidateId: e.target.value })} className={inputCls} required>
                     <option value="">Choisir</option>
                     {candidates.map((c) => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
@@ -202,7 +228,7 @@ export default function DrivingPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium mb-1">Moniteur (optionnel)</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Moniteur (optionnel)</label>
                 <select value={form.moniteurId} onChange={(e) => setForm({ ...form, moniteurId: e.target.value })} className={inputCls}>
                   <option value="">Aucun</option>
                   {moniteurs.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
@@ -210,21 +236,21 @@ export default function DrivingPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Date</label>
                   <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Durée (min)</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Durée (min)</label>
                   <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className={inputCls} required />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Note</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Note</label>
                 <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className={inputCls} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeForm} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-gray-50">Annuler</button>
-                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover">
+                <button type="button" onClick={closeForm} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card text-sm font-medium text-foreground/80 hover:bg-surface-2 transition">Annuler</button>
+                <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover shadow-sm shadow-primary/25 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed">
                   {editing ? "Enregistrer" : "Ajouter"}
                 </button>
               </div>
